@@ -30,3 +30,13 @@ next-env.d.ts
 
 # vercel
 .vercel
+
+.vercel
+.env*
+
+/src/generated/prisma
+
+# auto-installed agent tool docs (Neon/Prisma skill references) — not app code
+/.agents
+/.windsurf
+/.claude/skills
