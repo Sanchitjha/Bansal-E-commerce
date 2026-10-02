@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   LayoutDashboard,
@@ -23,10 +23,13 @@ import {
   Search,
   ArrowUpRight,
   ShieldAlert,
+  ShieldCheck,
   Save,
   Download,
   Eye,
   RefreshCw,
+  LogOut,
+  Lock,
 } from 'lucide-react';
 import { useLuminary } from '@/context/LuminaryContext';
 import { Product, OrderStatus, BulkEnquiryStatus, CategoryType, Coupon, HeroBanner } from '@/types';
@@ -36,6 +39,69 @@ interface AdminDashboardModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
+const AdminLoginForm: React.FC = () => {
+  const { adminLogin } = useLuminary();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setIsSubmitting(true);
+    const res = await adminLogin(email, password);
+    setIsSubmitting(false);
+    if (!res.success) setError(res.message || 'Login failed');
+  };
+
+  return (
+    <div className="flex-1 flex items-center justify-center p-10">
+      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
+        <div className="text-center space-y-2 mb-2">
+          <div className="w-12 h-12 rounded-xl bg-gold-500/10 border border-gold-500/30 flex items-center justify-center mx-auto text-gold-400">
+            <Lock className="w-5 h-5" />
+          </div>
+          <h3 className="font-serif text-lg font-bold text-slate-100">Admin Sign In</h3>
+          <p className="text-xs text-slate-400">Enter your admin credentials to manage the store</p>
+        </div>
+
+        <div>
+          <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">Email</label>
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full px-3.5 py-2.5 text-xs bg-obsidian-950 border border-slate-800 focus:border-gold-500 rounded-xl text-slate-100 outline-none"
+          />
+        </div>
+
+        <div>
+          <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">Password</label>
+          <input
+            type="password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full px-3.5 py-2.5 text-xs bg-obsidian-950 border border-slate-800 focus:border-gold-500 rounded-xl text-slate-100 outline-none"
+          />
+        </div>
+
+        {error && <p className="text-[11px] text-rose-400 font-semibold">{error}</p>}
+
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full py-3 rounded-xl gold-gradient-bg text-obsidian-950 font-bold text-xs uppercase tracking-wider shadow-gold-glow hover:scale-105 transition disabled:opacity-60"
+        >
+          {isSubmitting ? 'Signing In...' : 'Sign In'}
+        </button>
+      </form>
+    </div>
+  );
+};
 
 export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
@@ -58,6 +124,10 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
     saveCoupon,
     toggleCouponStatus,
     addStockAdjustment,
+    adminSession,
+    adminAuthChecked,
+    adminLogout,
+    refreshAdminData,
   } = useLuminary();
 
   const [activeTab, setActiveTab] = useState<
@@ -67,6 +137,12 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
   // Add/Edit Product Modal State
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
   const [showProductModal, setShowProductModal] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && adminSession) {
+      refreshAdminData().catch(() => {});
+    }
+  }, [isOpen, adminSession, refreshAdminData]);
 
   // Calculate High Level Metrics
   const totalSalesRevenue = orders.reduce((sum, o) => sum + o.totalAmount, 0);
@@ -85,13 +161,19 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
     { name: 'Sun', Sales: 49000 },
   ];
 
+  const [productSaveError, setProductSaveError] = useState<string | null>(null);
+  const [isSavingProduct, setIsSavingProduct] = useState(false);
+
   // Handle save new / edit product
-  const handleSaveProductSubmit = (e: React.FormEvent) => {
+  const handleSaveProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingProduct?.name || !editingProduct?.sku) return;
 
-    const fullProd: Product = {
-      id: editingProduct.id || `prod-${Date.now()}`,
+    const mrp = Number(editingProduct.mrp) || 1999;
+    const sellingPrice = Number(editingProduct.sellingPrice) || 1299;
+
+    const productInput = {
+      ...(editingProduct.id ? { id: editingProduct.id } : {}),
       name: editingProduct.name,
       sku: editingProduct.sku,
       category: (editingProduct.category || 'fragrance') as CategoryType,
@@ -100,16 +182,16 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
       shortDescription: editingProduct.shortDescription || '',
       longDescription: editingProduct.longDescription || '',
       images: editingProduct.images && editingProduct.images.length > 0 ? editingProduct.images : ['https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=800&q=80'],
-      mrp: Number(editingProduct.mrp) || 1999,
-      sellingPrice: Number(editingProduct.sellingPrice) || 1299,
+      mrp,
+      sellingPrice,
       costPrice: Number(editingProduct.costPrice) || 500,
-      discountPercent: Math.round(((Number(editingProduct.mrp) - Number(editingProduct.sellingPrice)) / Number(editingProduct.mrp)) * 100) || 0,
+      discountPercent: Math.round(((mrp - sellingPrice) / mrp) * 100) || 0,
       gstRate: Number(editingProduct.gstRate) || 18,
       hsnCode: editingProduct.hsnCode || '33030010',
       stock: Number(editingProduct.stock) || 20,
       lowStockThreshold: Number(editingProduct.lowStockThreshold) || 10,
       weightKg: Number(editingProduct.weightKg) || 0.3,
-      status: 'active',
+      status: 'active' as const,
       isFeatured: Boolean(editingProduct.isFeatured),
       isBestSeller: Boolean(editingProduct.isBestSeller),
       isNewArrival: Boolean(editingProduct.isNewArrival),
@@ -117,20 +199,26 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
       priorityOrder: Number(editingProduct.priorityOrder) || 99,
       isBulkAvailable: true,
       bulkSlabs: editingProduct.bulkSlabs || [
-        { minQty: 1, pricePerUnit: Number(editingProduct.sellingPrice) || 1299 },
-        { minQty: 5, pricePerUnit: Math.round(Number(editingProduct.sellingPrice) * 0.9) },
-        { minQty: 10, pricePerUnit: Math.round(Number(editingProduct.sellingPrice) * 0.8) },
+        { minQty: 1, pricePerUnit: sellingPrice },
+        { minQty: 5, pricePerUnit: Math.round(sellingPrice * 0.9) },
+        { minQty: 10, pricePerUnit: Math.round(sellingPrice * 0.8) },
       ],
-      rating: 5.0,
-      reviewsCount: 1,
-      urlSlug: (editingProduct.name || 'product').toLowerCase().replace(/\s+/g, '-'),
-      createdAt: editingProduct.createdAt || new Date().toISOString().split('T')[0],
-      updatedAt: new Date().toISOString().split('T')[0],
+      rating: editingProduct.rating ?? 5.0,
+      reviewsCount: editingProduct.reviewsCount ?? 1,
+      urlSlug: editingProduct.urlSlug || `${(editingProduct.name || 'product').toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now().toString().slice(-5)}`,
     };
 
-    saveProduct(fullProd);
-    setShowProductModal(false);
-    setEditingProduct(null);
+    setProductSaveError(null);
+    setIsSavingProduct(true);
+    try {
+      await saveProduct(productInput);
+      setShowProductModal(false);
+      setEditingProduct(null);
+    } catch (err) {
+      setProductSaveError(err instanceof Error ? err.message : 'Could not save product.');
+    } finally {
+      setIsSavingProduct(false);
+    }
   };
 
   const exportCSV = (filename: string, rows: string[][]) => {
@@ -170,14 +258,34 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-2 rounded-full hover:bg-slate-800 text-slate-400 hover:text-gold-300 transition"
-          >
-            <X className="w-6 h-6" />
-          </button>
+          <div className="flex items-center gap-2">
+            {adminSession && (
+              <button
+                onClick={() => adminLogout()}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-obsidian-900 border border-slate-700 text-slate-300 hover:text-rose-400 hover:border-rose-500/40 transition text-xs font-bold"
+                title="Sign out"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Sign Out</span>
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="p-2 rounded-full hover:bg-slate-800 text-slate-400 hover:text-gold-300 transition"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
         </div>
 
+        {!adminAuthChecked ? (
+          <div className="flex-1 flex items-center justify-center p-10 text-slate-400 text-sm">
+            Checking admin session...
+          </div>
+        ) : !adminSession ? (
+          <AdminLoginForm />
+        ) : (
+          <>
         {/* Tab Navigation Menu Bar */}
         <div className="bg-obsidian-950/80 border-b border-slate-800 px-4 flex items-center space-x-1 overflow-x-auto text-xs font-semibold shrink-0">
           {[
@@ -329,6 +437,7 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
                 <button
                   onClick={() => {
                     setEditingProduct({});
+                    setProductSaveError(null);
                     setShowProductModal(true);
                   }}
                   className="px-4 py-2 rounded-xl gold-gradient-bg text-obsidian-950 font-bold text-xs uppercase tracking-wider shadow-gold-glow flex items-center gap-1.5 hover:scale-105 transition"
@@ -389,6 +498,7 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
                           <button
                             onClick={() => {
                               setEditingProduct(prod);
+                              setProductSaveError(null);
                               setShowProductModal(true);
                             }}
                             className="p-1.5 rounded bg-slate-800 hover:bg-gold-500 hover:text-obsidian-950 text-slate-300 transition"
@@ -397,7 +507,7 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
                             <Edit className="w-3.5 h-3.5" />
                           </button>
                           <button
-                            onClick={() => deleteProduct(prod.id)}
+                            onClick={() => deleteProduct(prod.id).catch((err) => alert(err instanceof Error ? err.message : 'Could not delete product'))}
                             className="p-1.5 rounded bg-slate-800 hover:bg-rose-600 hover:text-white text-slate-300 transition"
                             title="Delete Product"
                           >
@@ -679,6 +789,8 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
             </div>
           )}
         </div>
+          </>
+        )}
       </div>
 
       {/* Add / Edit Product Modal */}
@@ -833,11 +945,18 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
                 </label>
               </div>
 
+              {productSaveError && (
+                <p className="text-[11px] text-rose-400 font-semibold bg-rose-500/10 border border-rose-500/30 rounded-lg py-2 px-3">
+                  {productSaveError}
+                </p>
+              )}
+
               <button
                 type="submit"
-                className="w-full py-3 rounded-xl gold-gradient-bg text-obsidian-950 font-bold text-xs uppercase shadow-gold-glow"
+                disabled={isSavingProduct}
+                className="w-full py-3 rounded-xl gold-gradient-bg text-obsidian-950 font-bold text-xs uppercase shadow-gold-glow disabled:opacity-60"
               >
-                SAVE PRODUCT TO DATABASE
+                {isSavingProduct ? 'SAVING...' : 'SAVE PRODUCT TO DATABASE'}
               </button>
             </form>
           </div>
