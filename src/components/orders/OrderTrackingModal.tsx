@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { X, Search, Package, CheckCircle2, Clock, Truck, MapPin, AlertCircle, FileText } from 'lucide-react';
-import { useLuminary } from '@/context/LuminaryContext';
 import { Order, OrderStatus } from '@/types';
 
 interface OrderTrackingModalProps {
@@ -13,18 +12,27 @@ interface OrderTrackingModalProps {
 export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
-  const { orders } = useLuminary();
   const [searchId, setSearchId] = useState('');
-  const [searchedOrder, setSearchedOrder] = useState<Order | null>(orders[0] || null);
+  const [searchedOrder, setSearchedOrder] = useState<Order | null>(null);
   const [searched, setSearched] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    const found = orders.find(
-      (o) => o.id.toLowerCase() === searchId.trim().toLowerCase() || o.phone.includes(searchId.trim())
-    );
-    setSearchedOrder(found || null);
-    setSearched(true);
+    const id = searchId.trim();
+    if (!id) return;
+
+    setIsSearching(true);
+    try {
+      const res = await fetch(`/api/orders/track?id=${encodeURIComponent(id)}`);
+      const data = await res.json();
+      setSearchedOrder(data.order || null);
+    } catch {
+      setSearchedOrder(null);
+    } finally {
+      setSearched(true);
+      setIsSearching(false);
+    }
   };
 
   const statusSteps: OrderStatus[] = [
@@ -67,38 +75,20 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({ isOpen, 
           <form onSubmit={handleSearch} className="flex gap-2">
             <input
               type="text"
-              placeholder="Enter Order ID (e.g. LF-20260928-000001) or Mobile"
+              placeholder="Enter your Order ID (e.g. LF-20260928-000001)"
               value={searchId}
               onChange={(e) => setSearchId(e.target.value)}
               className="flex-1 px-4 py-2.5 text-xs bg-obsidian-950 border border-slate-800 focus:border-gold-500 rounded-xl text-slate-100 placeholder-slate-500 outline-none font-mono"
             />
             <button
               type="submit"
-              className="px-6 py-2.5 rounded-xl gold-gradient-bg text-obsidian-950 font-bold text-xs uppercase tracking-wider shadow-gold-glow hover:scale-105 transition flex items-center gap-1.5"
+              disabled={isSearching}
+              className="px-6 py-2.5 rounded-xl gold-gradient-bg text-obsidian-950 font-bold text-xs uppercase tracking-wider shadow-gold-glow hover:scale-105 transition flex items-center gap-1.5 disabled:opacity-60"
             >
               <Search className="w-4 h-4" />
-              <span>Track</span>
+              <span>{isSearching ? 'Searching...' : 'Track'}</span>
             </button>
           </form>
-
-          {/* Quick Select Recent Order Pill */}
-          {orders.length > 0 && (
-            <div className="flex items-center gap-2 text-xs">
-              <span className="text-slate-400">Sample Order:</span>
-              {orders.slice(0, 2).map((ord) => (
-                <button
-                  key={ord.id}
-                  onClick={() => {
-                    setSearchId(ord.id);
-                    setSearchedOrder(ord);
-                  }}
-                  className="px-2.5 py-1 rounded bg-obsidian-950 border border-gold-500/30 text-gold-300 font-mono text-[11px] hover:bg-gold-500/10 transition"
-                >
-                  {ord.id}
-                </button>
-              ))}
-            </div>
-          )}
 
           {/* Results Display */}
           {searchedOrder ? (
@@ -108,7 +98,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({ isOpen, 
                 <div>
                   <span className="text-[10px] text-slate-400 uppercase font-semibold">Order Reference</span>
                   <h4 className="font-mono text-base font-bold text-gold-300">{searchedOrder.id}</h4>
-                  <p className="text-[11px] text-slate-400">{searchedOrder.date} • {searchedOrder.customerName}</p>
+                  <p className="text-[11px] text-slate-400">{new Date(searchedOrder.date).toLocaleString()} • {searchedOrder.customerName}</p>
                 </div>
                 <div className="text-left sm:text-right">
                   <span className="text-[10px] text-slate-400 uppercase font-semibold">Current Status</span>
