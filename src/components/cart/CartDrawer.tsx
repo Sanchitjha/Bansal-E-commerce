@@ -36,10 +36,10 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const freeShippingNeeded = Math.max(0, settings.freeShippingThreshold - totals.subtotal);
   const freeShippingProgress = Math.min(100, (totals.subtotal / settings.freeShippingThreshold) * 100);
 
-  const handleApply = (e: React.FormEvent) => {
+  const handleApply = async (e: React.FormEvent) => {
     e.preventDefault();
     if (couponInput.trim()) {
-      const res = applyCoupon(couponInput);
+      const res = await applyCoupon(couponInput);
       setCouponMsg(res);
       if (res.success) setCouponInput('');
     }
