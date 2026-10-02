@@ -34,15 +34,17 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (cart.length === 0) return;
 
     setIsSubmitting(true);
+    setError(null);
 
-    setTimeout(() => {
-      const newOrder = placeOrder({
+    try {
+      const newOrder = await placeOrder({
         customerName: formData.customerName,
         phone: formData.phone,
         email: formData.email,
@@ -62,9 +64,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         });
       } catch (e) {}
 
-      setIsSubmitting(false);
       onOrderSuccess(newOrder);
-    }, 1200);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not place order. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -291,6 +296,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               </div>
 
               <div className="space-y-2">
+                {error && (
+                  <p className="text-[11px] text-rose-400 font-semibold text-center bg-rose-500/10 border border-rose-500/30 rounded-lg py-2 px-3">
+                    {error}
+                  </p>
+                )}
                 <button
                   type="submit"
                   disabled={isSubmitting}
