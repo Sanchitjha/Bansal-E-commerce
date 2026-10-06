@@ -78,7 +78,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
         </div>
 
         {/* Free Shipping Progress */}
-        <div className="px-6 py-3 bg-slate-900/50 border-b border-stone-200 text-xs">
+        <div className="px-6 py-3 bg-brand-green-50 border-b border-stone-200 text-xs">
           <div className="flex items-center justify-between text-[11px] mb-1.5 font-medium">
             <span className="flex items-center gap-1.5 text-slate-700">
               <Truck className="w-4 h-4 text-brand-green-700" />
