@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/models';
 import { getExistingCartSessionId } from '@/lib/cart-session';
 import { badRequest, notFound, serverError } from '@/lib/api-helpers';
 import { cancelPendingOrder, restoreCartFromOrder } from '@/lib/orders';
@@ -10,10 +10,11 @@ export async function POST(request: NextRequest) {
     const { orderId, accessToken } = await request.json();
     if (!orderId || !accessToken) return badRequest('Missing order details.');
 
-    const order = await prisma.order.findUnique({ where: { id: String(orderId) } });
+    const { Order } = await db();
+    const order = await Order.findById(String(orderId));
     if (!order || order.accessToken !== accessToken) return notFound('Order not found');
 
-    const cancelled = await cancelPendingOrder(order.id, 'Customer did not complete the payment');
+    const cancelled = await cancelPendingOrder(order._id, 'Customer did not complete the payment');
     if (cancelled) {
       const sessionId = await getExistingCartSessionId(request);
       if (sessionId) await restoreCartFromOrder(sessionId, order);
