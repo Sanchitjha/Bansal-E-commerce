@@ -98,6 +98,9 @@ export interface OrderItem {
   unitPrice: number;
   totalPrice: number;
   gstAmount: number;
+  hsnCode?: string;
+  gstRate?: number;
+  taxableValue?: number;
 }
 
 export type OrderStatus =
@@ -138,6 +141,10 @@ export interface Order {
   orderStatus: OrderStatus;
   courier?: string;
   trackingNumber?: string;
+  accessToken?: string | null;
+  gatewayOrderId?: string | null;
+  paymentRef?: string | null;
+  customerId?: string | null;
 }
 
 export type BulkEnquiryStatus =
@@ -204,4 +211,9 @@ export interface SiteSettings {
   freeShippingThreshold: number;
   defaultShippingCharge: number;
   lowStockAlertThreshold: number;
+  sellerState: string;
+  gstin: string;
+  legalName: string;
+  codEnabled: boolean;
+  blockedPincodes: string;
 }

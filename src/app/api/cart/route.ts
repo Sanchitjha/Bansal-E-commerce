@@ -20,10 +20,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { productId, quantity = 1, selectedVariantId } = body;
     if (!productId || typeof productId !== 'string') return badRequest('productId is required');
-    if (!Number.isFinite(quantity) || quantity < 1) return badRequest('quantity must be a positive number');
+    if (!Number.isInteger(quantity) || quantity < 1) return badRequest('quantity must be a whole number of at least 1');
 
     const product = await prisma.product.findUnique({ where: { id: productId } });
-    if (!product) return notFound('Product not found');
+    if (!product || product.status !== 'active') return notFound('Product not found');
 
     const { sessionId, isNew } = await getOrCreateCartSession(request);
 
@@ -36,6 +36,12 @@ export async function POST(request: NextRequest) {
         sessionId_productId_selectedVariantId: { sessionId, productId, selectedVariantId: variantKey },
       },
     });
+
+    const wantedQty = (existing?.quantity ?? 0) + quantity;
+    if (product.stock <= 0) return badRequest(`${product.name} is out of stock.`);
+    if (wantedQty > product.stock) {
+      return badRequest(`Only ${product.stock} unit${product.stock === 1 ? '' : 's'} of ${product.name} available.`);
+    }
 
     if (existing) {
       await prisma.cartItem.update({
@@ -62,10 +68,18 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     const { productId, quantity, selectedVariantId } = body;
     if (!productId || typeof productId !== 'string') return badRequest('productId is required');
-    if (!Number.isFinite(quantity) || quantity < 0) return badRequest('quantity must be a non-negative number');
+    if (!Number.isInteger(quantity) || quantity < 0) return badRequest('quantity must be a whole number');
 
     const sessionId = await getExistingCartSessionId(request);
     if (!sessionId) return notFound('No cart found');
+
+    if (quantity > 0) {
+      const product = await prisma.product.findUnique({ where: { id: productId }, select: { name: true, stock: true } });
+      if (!product) return notFound('Product not found');
+      if (quantity > product.stock) {
+        return badRequest(`Only ${product.stock} unit${product.stock === 1 ? '' : 's'} of ${product.name} available.`);
+      }
+    }
 
     const variantKey = selectedVariantId || '';
     const where = {

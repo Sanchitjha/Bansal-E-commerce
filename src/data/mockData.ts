@@ -10,6 +10,11 @@ export const INITIAL_SETTINGS: SiteSettings = {
   freeShippingThreshold: 999,
   defaultShippingCharge: 99,
   lowStockAlertThreshold: 10,
+  sellerState: 'Maharashtra',
+  gstin: '',
+  legalName: 'Luminary',
+  codEnabled: true,
+  blockedPincodes: '',
 };
 
 export const INITIAL_HERO_BANNERS: HeroBanner[] = [

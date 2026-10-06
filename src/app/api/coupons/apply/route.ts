@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { attachCartCookie, getExistingCartSessionId, getOrCreateCartSession } from '@/lib/cart-session';
 import { badRequest, serverError } from '@/lib/api-helpers';
 import { buildCartPayload } from '@/lib/cart-response';
+import { checkCouponEligibility } from '@/lib/pricing';
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,23 +13,25 @@ export async function POST(request: NextRequest) {
 
     const coupon = await prisma.coupon.findFirst({ where: { code, isActive: true } });
     if (!coupon) {
-      return NextResponse.json({ success: false, message: 'Invalid or expired coupon code.' }, { status: 200 });
+      return NextResponse.json({ success: false, message: 'Invalid or expired coupon code.' });
     }
 
     const { sessionId, isNew } = await getOrCreateCartSession(request);
     const current = await buildCartPayload(sessionId);
 
-    if (current.totals.subtotal < coupon.minOrderValue) {
-      return NextResponse.json(
-        { success: false, message: `Minimum order value of ₹${coupon.minOrderValue} required for ${coupon.code}.` },
-        { status: 200 }
-      );
+    const eligibility = checkCouponEligibility(coupon, current.lines);
+    if (!eligibility.ok) {
+      return NextResponse.json({ success: false, message: eligibility.message });
     }
 
     await prisma.cartSession.update({ where: { id: sessionId }, data: { activeCouponCode: coupon.code } });
     const payload = await buildCartPayload(sessionId);
 
-    const response = NextResponse.json({ success: true, message: `Coupon '${coupon.code}' applied successfully!`, ...payload });
+    const message = coupon.firstOrderOnly
+      ? `Coupon '${coupon.code}' applied. It is valid on your first order only and is verified at checkout.`
+      : `Coupon '${coupon.code}' applied successfully!`;
+
+    const response = NextResponse.json({ success: true, message, ...payload });
     if (isNew) attachCartCookie(response, sessionId);
     return response;
   } catch (err) {

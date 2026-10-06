@@ -1,8 +1,8 @@
 import { prisma } from './prisma';
-import { computeCartTotals, getUnitPriceForProduct } from './pricing';
+import { computeCartTotals, getUnitPriceForProduct, type PricingLine } from './pricing';
 
-/** Shared shape builder used by /api/cart and /api/coupons/apply so both stay in sync. */
-export async function buildCartPayload(sessionId: string) {
+/** Shared shape builder used by the cart, coupon and order routes so they always agree on prices. */
+export async function buildCartPayload(sessionId: string, customerState?: string) {
   const [session, settings] = await Promise.all([
     prisma.cartSession.findUnique({
       where: { id: sessionId },
@@ -11,20 +11,7 @@ export async function buildCartPayload(sessionId: string) {
     prisma.siteSettings.findUnique({ where: { id: 'singleton' } }),
   ]);
 
-  if (!session) {
-    return {
-      items: [],
-      appliedCoupon: null,
-      totals: computeCartTotals({
-        lines: [],
-        coupon: null,
-        freeShippingThreshold: settings?.freeShippingThreshold ?? 999,
-        defaultShippingCharge: settings?.defaultShippingCharge ?? 99,
-      }),
-    };
-  }
-
-  const items = session.items.map((item) => {
+  const items = (session?.items ?? []).map((item) => {
     const unitPrice = getUnitPriceForProduct(item.product, item.quantity);
     return {
       product: item.product,
@@ -35,26 +22,28 @@ export async function buildCartPayload(sessionId: string) {
     };
   });
 
-  let appliedCoupon = null;
-  if (session.activeCouponCode) {
-    appliedCoupon = await prisma.coupon.findFirst({
-      where: { code: session.activeCouponCode, isActive: true },
-    });
-  }
+  const appliedCoupon = session?.activeCouponCode
+    ? await prisma.coupon.findFirst({ where: { code: session.activeCouponCode, isActive: true } })
+    : null;
+
+  const lines: PricingLine[] = items.map((i) => ({
+    productId: i.product.id,
+    category: i.product.category,
+    quantity: i.quantity,
+    unitPrice: i.unitPrice,
+    totalPrice: i.totalPrice,
+    mrp: i.product.mrp,
+    gstRate: i.product.gstRate,
+  }));
 
   const totals = computeCartTotals({
-    lines: items.map((i) => ({
-      productId: i.product.id,
-      quantity: i.quantity,
-      unitPrice: i.unitPrice,
-      totalPrice: i.totalPrice,
-      mrp: i.product.mrp,
-      gstRate: i.product.gstRate,
-    })),
+    lines,
     coupon: appliedCoupon,
     freeShippingThreshold: settings?.freeShippingThreshold ?? 999,
     defaultShippingCharge: settings?.defaultShippingCharge ?? 99,
+    sellerState: settings?.sellerState,
+    customerState,
   });
 
-  return { items, appliedCoupon, totals };
+  return { items, appliedCoupon, totals, lines };
 }
