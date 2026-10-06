@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidateCatalog } from '@/lib/data';
 import { prisma } from '@/lib/prisma';
 import { badRequest, requireAdmin, serverError, unauthorized } from '@/lib/api-helpers';
 import { CATEGORY_TYPES, isOneOf } from '@/lib/validators';
@@ -100,6 +101,7 @@ export async function POST(request: NextRequest) {
       data: { adminName: admin.name, action: 'Created New Product', details: `Added ${product.name} (SKU: ${product.sku})` },
     });
 
+    revalidateCatalog();
     return NextResponse.json(product, { status: 201 });
   } catch (err: unknown) {
     if (typeof err === 'object' && err && 'code' in err && (err as { code?: string }).code === 'P2002') {
