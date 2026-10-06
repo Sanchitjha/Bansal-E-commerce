@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/models';
 import { verifyPassword } from '@/lib/auth';
 import { attachCustomerCookie, signCustomerToken } from '@/lib/customer-auth';
 import { badRequest, serverError, unauthorized } from '@/lib/api-helpers';
@@ -18,7 +18,8 @@ export async function POST(request: NextRequest) {
     const locked = await lockSecondsRemaining(keys);
     if (locked > 0) return NextResponse.json({ error: lockedMessage(locked) }, { status: 429 });
 
-    const customer = await prisma.customer.findUnique({ where: { email } });
+    const { Customer } = await db();
+    const customer = await Customer.findOne({ email });
     const valid = await verifyPassword(password, customer?.passwordHash ?? DUMMY_HASH);
     if (!customer || !valid) {
       await recordFailure(keys);
@@ -26,8 +27,8 @@ export async function POST(request: NextRequest) {
     }
 
     await clearFailures(keys);
-    const response = NextResponse.json({ id: customer.id, name: customer.name, email: customer.email, phone: customer.phone });
-    attachCustomerCookie(response, signCustomerToken({ sub: customer.id, email: customer.email, name: customer.name }));
+    const response = NextResponse.json({ id: customer._id, name: customer.name, email: customer.email, phone: customer.phone });
+    attachCustomerCookie(response, signCustomerToken({ sub: customer._id, email: customer.email, name: customer.name }));
     return response;
   } catch (err) {
     return serverError(err);
