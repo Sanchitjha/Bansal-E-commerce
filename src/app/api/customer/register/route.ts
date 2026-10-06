@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/models';
+import { isDuplicateKey } from '@/lib/db';
 import { hashPassword } from '@/lib/auth';
 import { attachCustomerCookie, signCustomerToken } from '@/lib/customer-auth';
 import { badRequest, serverError } from '@/lib/api-helpers';
@@ -24,18 +25,23 @@ export async function POST(request: NextRequest) {
     const locked = await lockSecondsRemaining(keys);
     if (locked > 0) return NextResponse.json({ error: lockedMessage(locked) }, { status: 429 });
 
-    const existing = await prisma.customer.findUnique({ where: { email } });
-    if (existing) {
+    const { Customer } = await db();
+    const taken = async () => {
       await recordFailure(keys);
       return badRequest('An account with this email already exists. Please sign in.');
+    };
+    if (await Customer.exists({ email })) return taken();
+
+    let customer;
+    try {
+      customer = await Customer.create({ name, email, phone, passwordHash: await hashPassword(password) });
+    } catch (err) {
+      if (isDuplicateKey(err)) return taken();
+      throw err;
     }
 
-    const customer = await prisma.customer.create({
-      data: { name, email, phone, passwordHash: await hashPassword(password) },
-    });
-
-    const response = NextResponse.json({ id: customer.id, name: customer.name, email: customer.email, phone: customer.phone }, { status: 201 });
-    attachCustomerCookie(response, signCustomerToken({ sub: customer.id, email: customer.email, name: customer.name }));
+    const response = NextResponse.json({ id: customer._id, name: customer.name, email: customer.email, phone: customer.phone }, { status: 201 });
+    attachCustomerCookie(response, signCustomerToken({ sub: customer._id, email: customer.email, name: customer.name }));
     return response;
   } catch (err) {
     return serverError(err);
