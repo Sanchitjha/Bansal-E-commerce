@@ -34,7 +34,7 @@ export const INITIAL_HERO_BANNERS: HeroBanner[] = [
     discountTag: 'FLAT ₹500 OFF',
     buttonText: 'DISCOVER HOLISTIC WELLNESS',
     destinationUrl: '/ayurvedic',
-    imageUrl: 'https://images.unsplash.com/photo-1608248597263-00079e960339?auto=format&fit=crop&w=1200&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=1200&q=80',
     priority: 2,
     isActive: true,
     productId: 'prod-4',
@@ -200,7 +200,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     shortDescription: 'Authentic 26-herb facial oil infused with Kashmiri Kesar & real 24k Gold leaf.',
     longDescription: 'Formulated following classical Ayurvedic texts, this luxurious night treatment brightens hyperpigmentation, smooths fine lines, and imparts a luminescent golden glow.',
     images: [
-      'https://images.unsplash.com/photo-1608248597263-00079e960339?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=800&q=80',
     ],
     mrp: 2499,
     sellingPrice: 1499,

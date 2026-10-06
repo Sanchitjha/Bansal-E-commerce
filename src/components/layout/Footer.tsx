@@ -32,7 +32,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAdmin, onOpenBulkModal, on
   const plain = 'block text-sm text-slate-500 py-1';
 
   return (
-    <footer className="max-w-[1400px] mx-auto px-4 sm:px-6 pb-8">
+    <footer className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 pb-8">
       <div className="bg-brand-sage rounded-3xl px-6 sm:px-10 pt-10 pb-6">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
           <div>

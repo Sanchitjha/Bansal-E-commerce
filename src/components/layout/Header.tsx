@@ -70,7 +70,7 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="sticky top-0 z-40 w-full bg-white border-b border-stone-200">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
             className="lg:hidden p-2 -ml-2 text-slate-800"
@@ -80,12 +80,12 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
 
           <button onClick={() => goToCategory('all')} className="flex items-center gap-2.5" aria-label="Luminary home">
-            <span className="w-10 h-10 rounded-lg bg-brand-orange-500 flex items-center justify-center text-white shadow-sm">
+            <span className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-brand-orange-500 flex items-center justify-center text-white shadow-sm">
               <Leaf className="w-5 h-5" />
             </span>
             <span className="flex flex-col text-left leading-none">
-              <span className="text-2xl font-bold tracking-tight text-brand-green-800">Luminary</span>
-              <span className="text-[9px] font-semibold tracking-[0.18em] uppercase text-brand-orange-500 mt-1">
+              <span className="text-xl sm:text-2xl font-bold tracking-tight text-brand-green-800">Luminary</span>
+              <span className="hidden sm:block text-[9px] font-semibold tracking-[0.18em] uppercase text-brand-orange-500 mt-1">
                 Fragrance · Ayurveda · Lifestyle
               </span>
             </span>
@@ -140,10 +140,10 @@ export const Header: React.FC<HeaderProps> = ({
           <button className={navLink} onClick={() => goTo('blog')}>Blog</button>
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <button
             onClick={onOpenTrackOrder}
-            className="w-10 h-10 rounded-full border border-stone-200 flex items-center justify-center text-slate-700 hover:border-brand-green-600 hover:text-brand-green-700 transition"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-stone-200 flex items-center justify-center text-slate-700 hover:border-brand-green-600 hover:text-brand-green-700 transition"
             title="Track order"
             aria-label="Track order"
           >
@@ -151,7 +151,7 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
           <button
             onClick={onOpenSearch}
-            className="w-10 h-10 rounded-full border border-stone-200 flex items-center justify-center text-slate-700 hover:border-brand-green-600 hover:text-brand-green-700 transition"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-stone-200 flex items-center justify-center text-slate-700 hover:border-brand-green-600 hover:text-brand-green-700 transition"
             title="Search"
             aria-label="Search"
           >
@@ -159,7 +159,7 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
           <button
             onClick={onOpenAdmin}
-            className="w-10 h-10 rounded-full border border-stone-200 flex items-center justify-center text-slate-700 hover:border-brand-green-600 hover:text-brand-green-700 transition"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-stone-200 flex items-center justify-center text-slate-700 hover:border-brand-green-600 hover:text-brand-green-700 transition"
             title="Admin sign in"
             aria-label="Admin sign in"
           >
@@ -167,7 +167,7 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
           <button
             onClick={onOpenCart}
-            className="relative w-10 h-10 rounded-full border border-stone-200 flex items-center justify-center text-slate-700 hover:border-brand-green-600 hover:text-brand-green-700 transition"
+            className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-stone-200 flex items-center justify-center text-slate-700 hover:border-brand-green-600 hover:text-brand-green-700 transition"
             title="Cart"
             aria-label="Open cart"
           >

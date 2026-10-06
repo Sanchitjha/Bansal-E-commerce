@@ -48,10 +48,10 @@ export const HeroBannerSlider: React.FC<HeroBannerSliderProps> = ({ onSelectProd
                 {banner.discountTag}
               </span>
             )}
-            <div className="flex items-center gap-4 pt-1">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-3 pt-1">
               <button
                 onClick={() => (banner.productId ? onSelectProduct(banner.productId) : onOpenBulkModal())}
-                className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-brand-orange-500 hover:bg-brand-orange-600 text-white text-sm font-bold tracking-wide transition"
+                className="inline-flex items-center gap-2 whitespace-nowrap px-5 py-3 rounded-lg bg-brand-orange-500 hover:bg-brand-orange-600 text-white text-sm font-bold tracking-wide transition"
               >
                 ORDER NOW
                 <span className="w-5 h-5 rounded bg-white/90 text-brand-orange-500 flex items-center justify-center">

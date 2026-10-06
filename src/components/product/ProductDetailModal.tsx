@@ -62,7 +62,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-20 p-2 rounded-full bg-slate-900/50 border border-stone-300 text-slate-700 hover:text-brand-green-700 transition"
+          className="absolute top-4 right-4 z-20 p-2 rounded-full bg-white border border-stone-300 text-slate-700 hover:text-brand-green-700 shadow-sm transition"
         >
           <X className="w-5 h-5" />
         </button>
@@ -203,7 +203,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                         className={`p-1.5 rounded text-center cursor-pointer transition ${
                           quantity >= slab.minQty && (idx === product.bulkSlabs.length - 1 || quantity < product.bulkSlabs[idx + 1].minQty)
                             ? 'bg-brand-green-700 text-obsidian-950 font-bold shadow'
-                            : 'bg-slate-900/50 border border-stone-200 text-slate-700 hover:border-brand-green-600/40'
+                            : 'bg-white border border-stone-200 text-slate-700 hover:border-brand-green-600/40'
                         }`}
                       >
                         <p className="text-[10px] uppercase opacity-80">{slab.minQty} Pc{slab.minQty > 1 ? 's' : ''}</p>
