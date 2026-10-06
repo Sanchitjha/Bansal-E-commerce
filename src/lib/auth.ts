@@ -26,12 +26,14 @@ export function verifyPassword(password: string, hash: string): Promise<boolean>
 }
 
 export function signAdminToken(payload: AdminTokenPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+  return jwt.sign({ ...payload, role: 'admin' }, JWT_SECRET, { expiresIn: '7d' });
 }
 
 export function verifyAdminToken(token: string): AdminTokenPayload | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as AdminTokenPayload;
+    const decoded = jwt.verify(token, JWT_SECRET) as AdminTokenPayload & { role?: string };
+    // Customer sessions are signed with the same secret and must never count as admin.
+    return decoded.role === 'admin' ? decoded : null;
   } catch {
     return null;
   }
