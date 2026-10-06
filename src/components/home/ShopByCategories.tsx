@@ -40,12 +40,12 @@ export const ShopByCategories: React.FC = () => {
           </button>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="flex flex-wrap justify-center gap-4">
           {items.map((item) => (
             <button
               key={item.name}
               onClick={() => openCategory(item.category)}
-              className="bg-white rounded-2xl p-5 flex flex-col items-center gap-3 text-center hover:-translate-y-1 hover:shadow-xl transition"
+              className="w-[calc(50%-8px)] sm:w-[calc(33.333%-11px)] lg:w-[calc(16.666%-14px)] bg-white rounded-2xl p-5 flex flex-col items-center gap-3 text-center hover:-translate-y-1 hover:shadow-xl transition"
             >
               <img src={item.image} alt={item.name} className="w-16 h-16 rounded-xl object-cover bg-stone-100" />
               <div>
