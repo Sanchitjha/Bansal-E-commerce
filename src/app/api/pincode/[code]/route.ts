@@ -1,18 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { serverError } from '@/lib/api-helpers';
+import { canonicalState } from '@/lib/india';
+import { estimateDelivery, isPincodeBlocked, lookupPincode } from '@/lib/pincode';
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ code: string }> }) {
-  const { code } = await params;
-  const clean = code.trim();
+  try {
+    const { code } = await params;
+    const pincode = code.trim();
 
-  if (!/^\d{6}$/.test(clean)) {
-    return NextResponse.json({ available: false, estimatedDays: 'N/A', courier: 'N/A', cod: false });
+    const [info, settings] = await Promise.all([
+      lookupPincode(pincode),
+      prisma.siteSettings.findUnique({ where: { id: 'singleton' } }),
+    ]);
+
+    if (!info.valid) {
+      return NextResponse.json({ valid: false, available: false, cod: false, message: 'This is not a valid Indian pincode.' });
+    }
+
+    const state = info.state ? canonicalState(info.state) ?? info.state : undefined;
+    const blocked = isPincodeBlocked(pincode, settings?.blockedPincodes ?? '');
+
+    return NextResponse.json({
+      valid: true,
+      unverified: info.unverified,
+      available: !blocked,
+      city: info.city,
+      state,
+      estimatedDays: blocked ? 'N/A' : estimateDelivery(state, settings?.sellerState ?? 'Maharashtra', pincode),
+      cod: !blocked && (settings ? settings.codEnabled : true),
+      message: blocked ? 'Sorry, we do not deliver to this pincode yet.' : undefined,
+    });
+  } catch (err) {
+    return serverError(err);
   }
-
-  const isMetro = ['11', '40', '56', '70', '60'].some((prefix) => clean.startsWith(prefix));
-  return NextResponse.json({
-    available: true,
-    estimatedDays: isMetro ? '2-3 Business Days' : '4-5 Business Days',
-    courier: isMetro ? 'BlueDart Air Express' : 'Delhivery Surface',
-    cod: true,
-  });
 }
