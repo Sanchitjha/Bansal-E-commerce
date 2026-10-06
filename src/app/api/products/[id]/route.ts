@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidateCatalog } from '@/lib/data';
 import { prisma } from '@/lib/prisma';
 import { badRequest, notFound, requireAdmin, serverError, unauthorized } from '@/lib/api-helpers';
 
@@ -34,6 +35,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       data: { adminName: admin.name, action: 'Updated Product', details: `Edited ${product.name} (SKU: ${product.sku})` },
     });
 
+    revalidateCatalog();
     return NextResponse.json(product);
   } catch (err: unknown) {
     if (typeof err === 'object' && err && 'code' in err && (err as { code?: string }).code === 'P2002') {
@@ -58,6 +60,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       data: { adminName: admin.name, action: 'Deleted Product', details: `Removed ${existing.name}` },
     });
 
+    revalidateCatalog();
     return NextResponse.json({ success: true });
   } catch (err) {
     return serverError(err);
