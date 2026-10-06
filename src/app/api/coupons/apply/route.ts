@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/models';
 import { attachCartCookie, getExistingCartSessionId, getOrCreateCartSession } from '@/lib/cart-session';
+import { setCartCoupon } from '@/lib/cart-ops';
 import { badRequest, serverError } from '@/lib/api-helpers';
 import { buildCartPayload } from '@/lib/cart-response';
 import { checkCouponEligibility } from '@/lib/pricing';
@@ -11,7 +12,8 @@ export async function POST(request: NextRequest) {
     const code = String(body.code ?? '').trim().toUpperCase();
     if (!code) return badRequest('code is required');
 
-    const coupon = await prisma.coupon.findFirst({ where: { code, isActive: true } });
+    const { Coupon } = await db();
+    const coupon = await Coupon.findOne({ code, isActive: true });
     if (!coupon) {
       return NextResponse.json({ success: false, message: 'Invalid or expired coupon code.' });
     }
@@ -24,7 +26,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: eligibility.message });
     }
 
-    await prisma.cartSession.update({ where: { id: sessionId }, data: { activeCouponCode: coupon.code } });
+    await setCartCoupon(sessionId, coupon.code);
     const payload = await buildCartPayload(sessionId);
 
     const message = coupon.firstOrderOnly
@@ -44,9 +46,8 @@ export async function DELETE(request: NextRequest) {
     const sessionId = await getExistingCartSessionId(request);
     if (!sessionId) return NextResponse.json({ success: true });
 
-    await prisma.cartSession.update({ where: { id: sessionId }, data: { activeCouponCode: null } });
-    const payload = await buildCartPayload(sessionId);
-    return NextResponse.json({ success: true, ...payload });
+    await setCartCoupon(sessionId, null);
+    return NextResponse.json({ success: true, ...(await buildCartPayload(sessionId)) });
   } catch (err) {
     return serverError(err);
   }
