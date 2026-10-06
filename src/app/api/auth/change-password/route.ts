@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/models';
 import { hashPassword, verifyPassword } from '@/lib/auth';
 import { badRequest, requireAdmin, serverError, unauthorized } from '@/lib/api-helpers';
 import { clearFailures, clientIp, lockSecondsRemaining, lockedMessage, recordFailure } from '@/lib/rate-limit';
@@ -18,15 +18,17 @@ export async function POST(request: NextRequest) {
     const locked = await lockSecondsRemaining(keys);
     if (locked > 0) return NextResponse.json({ error: lockedMessage(locked) }, { status: 429 });
 
-    const admin = await prisma.admin.findUnique({ where: { id: session.sub } });
+    const { Admin, ActivityLog } = await db();
+    const admin = await Admin.findById(session.sub);
     if (!admin || !(await verifyPassword(String(currentPassword), admin.passwordHash))) {
       await recordFailure(keys);
       return badRequest('Current password is incorrect.');
     }
 
     await clearFailures(keys);
-    await prisma.admin.update({ where: { id: admin.id }, data: { passwordHash: await hashPassword(String(newPassword)) } });
-    await prisma.activityLog.create({ data: { adminName: admin.name, action: 'Changed admin password' } });
+    admin.passwordHash = await hashPassword(String(newPassword));
+    await admin.save();
+    await ActivityLog.create({ adminName: admin.name, action: 'Changed admin password' });
 
     return NextResponse.json({ success: true });
   } catch (err) {
