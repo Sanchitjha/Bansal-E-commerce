@@ -11,7 +11,7 @@ const POSTS = [
     tag: 'Ayurveda',
     title: 'Kumkumadi Tailam: What It Does for Your Skin',
     excerpt: 'A closer look at the saffron-based facial oil and how to add it to your night routine.',
-    image: 'https://images.unsplash.com/photo-1608248597263-00079e960339?auto=format&fit=crop&w=600&q=80',
+    image: 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=600&q=80',
   },
   {
     tag: 'Lifestyle',
