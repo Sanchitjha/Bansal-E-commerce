@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidateCatalog } from '@/lib/data';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/models';
 import { badRequest, requireAdmin, serverError, unauthorized } from '@/lib/api-helpers';
 import { canonicalState } from '@/lib/india';
 
@@ -8,8 +8,8 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const settings = await prisma.siteSettings.findUnique({ where: { id: 'singleton' } });
-    return NextResponse.json(settings);
+    const { SiteSettings } = await db();
+    return NextResponse.json(await SiteSettings.findById('singleton'));
   } catch (err) {
     return serverError(err);
   }
@@ -63,15 +63,10 @@ export async function PUT(request: NextRequest) {
       blockedPincodes: blockedPincodes.join(','),
     };
 
-    const settings = await prisma.siteSettings.upsert({
-      where: { id: 'singleton' },
-      create: { id: 'singleton', ...data },
-      update: data,
-    });
+    const { SiteSettings, ActivityLog } = await db();
+    const settings = await SiteSettings.findOneAndUpdate({ _id: 'singleton' }, { $set: data }, { upsert: true, new: true, setDefaultsOnInsert: true });
 
-    await prisma.activityLog.create({
-      data: { adminName: admin.name, action: 'Updated Website Settings', details: 'Store settings modified' },
-    });
+    await ActivityLog.create({ adminName: admin.name, action: 'Updated Website Settings', details: 'Store settings modified' });
 
     revalidateCatalog();
     return NextResponse.json(settings);

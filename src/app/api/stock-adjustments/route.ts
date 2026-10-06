@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidateCatalog } from '@/lib/data';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/models';
 import { badRequest, notFound, requireAdmin, serverError, unauthorized } from '@/lib/api-helpers';
 
 export async function POST(request: NextRequest) {
@@ -9,24 +9,24 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { productId, qtyChange, reason } = body;
-    if (!productId) return badRequest('productId is required');
-    if (!Number.isFinite(qtyChange) || qtyChange === 0) return badRequest('qtyChange must be a non-zero number');
+    const { productId, qtyChange } = body;
+    const reason = String(body.reason ?? '').trim().slice(0, 200);
+    if (!productId || typeof productId !== 'string') return badRequest('productId is required');
+    if (!Number.isInteger(qtyChange) || qtyChange === 0) return badRequest('qtyChange must be a non-zero whole number');
 
-    const existing = await prisma.product.findUnique({ where: { id: productId } });
-    if (!existing) return notFound('Product not found');
+    const { Product, ActivityLog } = await db();
 
-    const product = await prisma.product.update({
-      where: { id: productId },
-      data: { stock: Math.max(0, existing.stock + qtyChange) },
-    });
+    // Removing stock only matches while enough remains, so two admins can't push it below zero.
+    const filter = qtyChange < 0 ? { _id: productId, stock: { $gte: -qtyChange } } : { _id: productId };
+    const product = await Product.findOneAndUpdate(filter, { $inc: { stock: qtyChange } }, { new: true });
+    if (!product) {
+      return (await Product.exists({ _id: productId })) ? badRequest('Not enough stock to remove that many units.') : notFound('Product not found');
+    }
 
-    await prisma.activityLog.create({
-      data: {
-        adminName: admin.name,
-        action: 'Inventory Stock Adjustment',
-        details: `${existing.name}: ${qtyChange > 0 ? '+' : ''}${qtyChange} units (${reason ?? 'No reason given'})`,
-      },
+    await ActivityLog.create({
+      adminName: admin.name,
+      action: 'Inventory Stock Adjustment',
+      details: `${product.name}: ${qtyChange > 0 ? '+' : ''}${qtyChange} units (${reason || 'No reason given'})`,
     });
 
     revalidateCatalog();

@@ -1,22 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidateCatalog } from '@/lib/data';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/models';
+import { withTransaction } from '@/lib/db';
 import { badRequest, requireAdmin, serverError, unauthorized } from '@/lib/api-helpers';
 
 export async function GET(request: NextRequest) {
   try {
     const admin = requireAdmin(request);
-    const banners = await prisma.heroBanner.findMany({
-      where: admin ? undefined : { isActive: true },
-      orderBy: { priority: 'asc' },
-    });
-    return NextResponse.json(banners);
+    const { HeroBanner } = await db();
+    return NextResponse.json(await HeroBanner.find(admin ? {} : { isActive: true }).sort({ priority: 1 }));
   } catch (err) {
     return serverError(err);
   }
 }
 
-/** Replaces the full banner set — mirrors LuminaryContext's updateHeroBanners. */
+const text = (v: unknown, max: number) => String(v ?? '').trim().slice(0, max);
+
+/** Replaces the full banner set in one step. */
 export async function PUT(request: NextRequest) {
   const admin = requireAdmin(request);
   if (!admin) return unauthorized();
@@ -24,33 +24,32 @@ export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
     if (!Array.isArray(body)) return badRequest('Body must be an array of banners');
+    if (body.length > 20) return badRequest('Please keep it to 20 banners or fewer.');
 
-    const banners = await prisma.$transaction(async (tx) => {
-      await tx.heroBanner.deleteMany({});
-      if (body.length === 0) return [];
-      await tx.heroBanner.createMany({
-        data: body.map((b: any) => ({
-          title: b.title,
-          subtitle: b.subtitle,
-          badge: b.badge,
-          discountTag: b.discountTag,
-          buttonText: b.buttonText,
-          destinationUrl: b.destinationUrl,
-          imageUrl: b.imageUrl,
-          priority: b.priority,
-          isActive: b.isActive ?? true,
-          productId: b.productId ?? null,
-        })),
-      });
-      return tx.heroBanner.findMany({ orderBy: { priority: 'asc' } });
+    const banners = body.map((b: Record<string, unknown>, i: number) => ({
+      title: text(b.title, 120),
+      subtitle: text(b.subtitle, 300),
+      badge: text(b.badge, 60),
+      discountTag: text(b.discountTag, 60),
+      buttonText: text(b.buttonText, 40) || 'ORDER NOW',
+      destinationUrl: text(b.destinationUrl, 200) || '/',
+      imageUrl: text(b.imageUrl, 1000),
+      priority: i + 1,
+      isActive: b.isActive !== false,
+      productId: b.productId ? text(b.productId, 60) : null,
+    }));
+    if (banners.some((b) => !b.title || !b.imageUrl)) return badRequest('Every banner needs a headline and an image.');
+
+    const { HeroBanner, ActivityLog } = await db();
+    await withTransaction(async (session) => {
+      await HeroBanner.deleteMany({}, { session });
+      if (banners.length > 0) await HeroBanner.insertMany(banners, { session });
     });
 
-    await prisma.activityLog.create({
-      data: { adminName: admin.name, action: 'Updated Hero Banners', details: 'Reordered / updated hero carousel slides' },
-    });
+    await ActivityLog.create({ adminName: admin.name, action: 'Updated Hero Banners', details: 'Reordered / updated hero carousel slides' });
 
     revalidateCatalog();
-    return NextResponse.json(banners);
+    return NextResponse.json(await HeroBanner.find().sort({ priority: 1 }));
   } catch (err) {
     return serverError(err);
   }

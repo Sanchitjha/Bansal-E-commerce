@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/models';
 import { serverError } from '@/lib/api-helpers';
 import { canonicalState } from '@/lib/india';
 import { estimateDelivery, isPincodeBlocked, lookupPincode } from '@/lib/pincode';
@@ -9,10 +9,8 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     const { code } = await params;
     const pincode = code.trim();
 
-    const [info, settings] = await Promise.all([
-      lookupPincode(pincode),
-      prisma.siteSettings.findUnique({ where: { id: 'singleton' } }),
-    ]);
+    const { SiteSettings } = await db();
+    const [info, settings] = await Promise.all([lookupPincode(pincode), SiteSettings.findById('singleton').lean()]);
 
     if (!info.valid) {
       return NextResponse.json({ valid: false, available: false, cod: false, message: 'This is not a valid Indian pincode.' });
