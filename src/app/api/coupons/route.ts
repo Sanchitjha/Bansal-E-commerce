@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/models';
+import { isDuplicateKey } from '@/lib/db';
 import { badRequest, requireAdmin, serverError, unauthorized } from '@/lib/api-helpers';
-import { COUPON_TYPES, isOneOf } from '@/lib/validators';
+import { CATEGORY_TYPES, COUPON_TYPES, isOneOf } from '@/lib/validators';
 
 export async function GET(request: NextRequest) {
+  // Codes are checked on the server at checkout, so the list is never needed by customers.
+  if (!requireAdmin(request)) return unauthorized();
+
   try {
-    const admin = requireAdmin(request);
-    const coupons = await prisma.coupon.findMany({
-      where: admin ? undefined : { isActive: true },
-      orderBy: { createdAt: 'desc' },
-    });
-    return NextResponse.json(coupons);
+    const { Coupon } = await db();
+    return NextResponse.json(await Coupon.find().sort({ createdAt: -1 }));
   } catch (err) {
     return serverError(err);
   }
@@ -22,32 +22,29 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    if (!body.code || typeof body.code !== 'string') return badRequest('code is required');
+    const code = String(body.code ?? '').trim().toUpperCase();
+    const value = Number(body.value);
+    if (!/^[A-Z0-9_-]{3,20}$/.test(code)) return badRequest('Code must be 3-20 letters or numbers.');
     if (!isOneOf(COUPON_TYPES, body.type)) return badRequest(`Invalid coupon type: ${body.type}`);
-    if (typeof body.value !== 'number') return badRequest('value must be a number');
+    if (!(value > 0) || (body.type === 'percentage' && value > 100)) return badRequest('Discount value is not valid.');
+    if (body.categorySpecific && !isOneOf(CATEGORY_TYPES, body.categorySpecific)) return badRequest('Invalid category.');
 
-    const coupon = await prisma.coupon.create({
-      data: {
-        code: body.code.trim().toUpperCase(),
-        type: body.type,
-        value: body.value,
-        minOrderValue: body.minOrderValue ?? 0,
-        maxDiscount: body.maxDiscount ?? null,
-        firstOrderOnly: !!body.firstOrderOnly,
-        categorySpecific: body.categorySpecific ?? null,
-        isActive: body.isActive ?? true,
-      },
+    const { Coupon, ActivityLog } = await db();
+    const coupon = await Coupon.create({
+      code,
+      type: body.type,
+      value,
+      minOrderValue: Math.max(0, Number(body.minOrderValue) || 0),
+      maxDiscount: body.maxDiscount ? Number(body.maxDiscount) : null,
+      firstOrderOnly: !!body.firstOrderOnly,
+      categorySpecific: body.categorySpecific || null,
+      isActive: body.isActive ?? true,
     });
 
-    await prisma.activityLog.create({
-      data: { adminName: admin.name, action: 'Saved Coupon Code', details: `Code: ${coupon.code}` },
-    });
-
+    await ActivityLog.create({ adminName: admin.name, action: 'Saved Coupon Code', details: `Code: ${coupon.code}` });
     return NextResponse.json(coupon, { status: 201 });
-  } catch (err: unknown) {
-    if (typeof err === 'object' && err && 'code' in err && (err as { code?: string }).code === 'P2002') {
-      return badRequest('A coupon with that code already exists.');
-    }
+  } catch (err) {
+    if (isDuplicateKey(err)) return badRequest('A coupon with that code already exists.');
     return serverError(err);
   }
 }
