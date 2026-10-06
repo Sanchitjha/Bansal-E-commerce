@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/models';
 import { requireAdmin, serverError, unauthorized } from '@/lib/api-helpers';
 
 export async function GET(request: NextRequest) {
@@ -10,8 +10,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const limit = Math.min(Number(searchParams.get('limit')) || 100, 500);
 
-    const logs = await prisma.activityLog.findMany({ orderBy: { timestamp: 'desc' }, take: limit });
-    return NextResponse.json(logs);
+    const { ActivityLog } = await db();
+    return NextResponse.json(await ActivityLog.find().sort({ timestamp: -1 }).limit(limit));
   } catch (err) {
     return serverError(err);
   }
