@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/models';
 import { badRequest, serverError } from '@/lib/api-helpers';
 import { normalizeIndianMobile } from '@/lib/india';
 import { clearFailures, clientIp, lockSecondsRemaining, lockedMessage, recordFailure } from '@/lib/rate-limit';
@@ -22,7 +22,8 @@ export async function GET(request: NextRequest) {
     const locked = await lockSecondsRemaining(keys);
     if (locked > 0) return NextResponse.json({ error: lockedMessage(locked) }, { status: 429 });
 
-    const order = await prisma.order.findUnique({ where: { id } });
+    const { Order } = await db();
+    const order = await Order.findById(id);
     const storedPhone = order ? normalizeIndianMobile(order.phone) : null;
 
     if (!order || storedPhone !== phone) {
@@ -33,10 +34,11 @@ export async function GET(request: NextRequest) {
     await clearFailures(keys);
 
     // Orders created before invoices existed have no link token yet; mint one on first lookup.
-    const withToken = order.accessToken
-      ? order
-      : await prisma.order.update({ where: { id: order.id }, data: { accessToken: newAccessToken() } });
-    return NextResponse.json({ order: withToken });
+    if (!order.accessToken) {
+      order.accessToken = newAccessToken();
+      await order.save();
+    }
+    return NextResponse.json({ order });
   } catch (err) {
     return serverError(err);
   }
