@@ -14,8 +14,10 @@ import {
   AlertCircle,
   CheckCircle2,
   FileText,
+  PlayCircle,
 } from 'lucide-react';
 import { Product } from '@/types';
+import { optimizeImage, videoPoster } from '@/lib/media';
 import { useLuminary } from '@/context/LuminaryContext';
 
 interface ProductDetailModalProps {
@@ -35,6 +37,8 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
   const { wishlist, toggleWishlist, addToCart, getUnitPriceForProduct, settings } = useLuminary();
   const [selectedImage, setSelectedImage] = useState(product.images[0] || '');
+  const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+  const videos = product.videos ?? [];
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<'desc' | 'specs' | 'shipping' | 'bulk'>('desc');
   const [addedSuccess, setAddedSuccess] = useState(false);
@@ -74,11 +78,15 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           {/* Left Column: Image Gallery */}
           <div className="md:col-span-6 space-y-4">
             <div className="relative aspect-square rounded-2xl overflow-hidden bg-stone-50 border border-stone-200">
-              <img
-                src={selectedImage || product.images[0]}
-                alt={product.name}
-                className="w-full h-full object-cover transition-all duration-500"
-              />
+              {selectedVideo ? (
+                <video key={selectedVideo} src={selectedVideo} poster={videoPoster(selectedVideo, 800)} controls playsInline preload="metadata" className="w-full h-full object-contain bg-black" />
+              ) : (
+                <img
+                  src={optimizeImage(selectedImage || product.images[0], 800)}
+                  alt={product.name}
+                  className="w-full h-full object-cover transition-all duration-500"
+                />
+              )}
               <div className="absolute top-3 left-3 flex flex-col gap-1 z-10">
                 {product.discountPercent > 0 && (
                   <span className="px-2.5 py-1 rounded-md bg-rose-600 text-white font-bold text-xs uppercase tracking-wider shadow">
@@ -86,7 +94,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   </span>
                 )}
                 {product.isBestSeller && (
-                  <span className="px-2.5 py-1 rounded-md bg-brand-green-700 text-obsidian-950 font-bold text-xs uppercase tracking-wider shadow">
+                  <span className="px-2.5 py-1 rounded-md bg-brand-green-700 text-white font-bold text-xs uppercase tracking-wider shadow">
                     BEST SELLER
                   </span>
                 )}
@@ -94,17 +102,33 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             </div>
 
             {/* Thumbnails */}
-            {product.images.length > 1 && (
+            {(product.images.length > 1 || videos.length > 0) && (
               <div className="flex gap-2 overflow-x-auto pb-1">
                 {product.images.map((img, idx) => (
                   <button
                     key={idx}
-                    onClick={() => setSelectedImage(img)}
+                    onClick={() => {
+                      setSelectedImage(img);
+                      setSelectedVideo(null);
+                    }}
                     className={`w-16 h-16 rounded-lg overflow-hidden border-2 transition shrink-0 ${
-                      selectedImage === img ? 'border-brand-green-600 scale-105' : 'border-stone-200 opacity-60 hover:opacity-100'
+                      !selectedVideo && selectedImage === img ? 'border-brand-green-600 scale-105' : 'border-stone-200 opacity-60 hover:opacity-100'
                     }`}
                   >
-                    <img src={img} alt="" className="w-full h-full object-cover" />
+                    <img src={optimizeImage(img, 160)} alt="" className="w-full h-full object-cover" />
+                  </button>
+                ))}
+                {videos.map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => setSelectedVideo(v)}
+                    aria-label="Play product video"
+                    className={`relative w-16 h-16 rounded-lg overflow-hidden border-2 transition shrink-0 bg-slate-800 ${
+                      selectedVideo === v ? 'border-brand-green-600 scale-105' : 'border-stone-200 opacity-80 hover:opacity-100'
+                    }`}
+                  >
+                    {videoPoster(v, 160) && <img src={videoPoster(v, 160)} alt="" className="w-full h-full object-cover" />}
+                    <PlayCircle className="absolute inset-0 m-auto w-6 h-6 text-white drop-shadow" />
                   </button>
                 ))}
               </div>

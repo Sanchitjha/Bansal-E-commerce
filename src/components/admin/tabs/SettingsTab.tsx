@@ -10,7 +10,7 @@ interface Status {
   razorpay: boolean;
   razorpayWebhook: boolean;
   email: boolean;
-  imageUpload: boolean;
+  mediaUpload: boolean;
   siteUrl: string;
 }
 
@@ -161,7 +161,7 @@ export const SettingsTab: React.FC = () => {
             <Dot ok={status.razorpay} label="Online payments (Razorpay)" hint="Add RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in Vercel, then redeploy. Until then customers can only choose cash on delivery." />
             <Dot ok={status.razorpayWebhook} label="Payment webhook" hint={`Create a Razorpay webhook to ${status.siteUrl}/api/payments/webhook for payment.captured, and add its secret as RAZORPAY_WEBHOOK_SECRET.`} />
             <Dot ok={status.email} label="Order emails" hint="Add RESEND_API_KEY and EMAIL_FROM in Vercel. Until then no confirmation emails are sent." />
-            <Dot ok={status.imageUpload} label="Image upload" hint="Connect Vercel Blob storage to the project. Until then paste image links." />
+            <Dot ok={status.mediaUpload} label="Image & video upload (Cloudinary)" hint="Add CLOUDINARY_URL (or CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET) in Vercel and redeploy. Until then paste image links." />
           </ul>
         ) : (
           <p className="text-xs text-slate-500">Checking…</p>

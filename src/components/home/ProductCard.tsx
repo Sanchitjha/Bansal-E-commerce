@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Heart, Star, Sparkles } from 'lucide-react';
+import { Heart, Star, Sparkles, PlayCircle } from 'lucide-react';
+import { optimizeImage } from '@/lib/media';
 import { Product } from '@/types';
 import { useLuminary } from '@/context/LuminaryContext';
 
@@ -41,10 +42,25 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView, 
     >
       <div className="relative aspect-[4/3] bg-stone-100 overflow-hidden">
         <img
-          src={product.images[0]}
+          src={optimizeImage(product.images[0], 600)}
           alt={product.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          loading="lazy"
+          className={`w-full h-full object-cover transition duration-500 ${product.images[1] ? 'group-hover:opacity-0' : 'group-hover:scale-105'}`}
         />
+        {product.images[1] && (
+          <img
+            src={optimizeImage(product.images[1], 600)}
+            alt=""
+            loading="lazy"
+            aria-hidden="true"
+            className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition duration-500"
+          />
+        )}
+        {product.videos && product.videos.length > 0 && (
+          <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 px-2 py-1 rounded-md bg-black/60 text-white text-[10px] font-semibold">
+            <PlayCircle className="w-3.5 h-3.5" /> Video
+          </span>
+        )}
 
         <div className="absolute top-3 left-3 flex flex-col gap-1.5">
           {product.isBestSeller && (

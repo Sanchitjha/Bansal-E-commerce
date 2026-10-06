@@ -1,6 +1,9 @@
 import crypto from 'crypto';
-import { prisma } from './prisma';
+import type { HydratedDocument } from 'mongoose';
+import { db, type IOrder } from './models';
+import { withTransaction } from './db';
 import { revalidateCatalog } from './data';
+import { addCartItem, setCartCoupon, setCartItemQuantity } from './cart-ops';
 
 export class OrderError extends Error {
   constructor(message: string, public status = 400) {
@@ -29,27 +32,26 @@ export function newOrderId(): string {
  * Guarded so a second call, or a call after payment, does nothing.
  */
 export async function cancelPendingOrder(orderId: string, reason: string): Promise<boolean> {
-  const cancelled = await prisma.$transaction(async (tx) => {
-    const res = await tx.order.updateMany({
-      where: { id: orderId, orderStatus: 'Pending Payment', paymentStatus: 'Pending' },
-      data: { orderStatus: 'Cancelled', paymentStatus: 'Failed' },
-    });
-    if (res.count === 0) return false;
+  const m = await db();
 
-    const order = await tx.order.findUnique({ where: { id: orderId } });
+  const cancelled = await withTransaction(async (session) => {
+    const order = await m.Order.findOneAndUpdate(
+      { _id: orderId, orderStatus: 'Pending Payment', paymentStatus: 'Pending' },
+      { $set: { orderStatus: 'Cancelled', paymentStatus: 'Failed' } },
+      { session, new: false }
+    );
     if (!order) return false;
 
     for (const item of storedItems(order.items)) {
-      await tx.product.updateMany({ where: { id: item.productId }, data: { stock: { increment: item.quantity } } });
+      await m.Product.updateOne({ _id: item.productId }, { $inc: { stock: item.quantity } }, { session });
     }
     if (order.couponCode) {
-      await tx.coupon.updateMany({ where: { code: order.couponCode, usageCount: { gt: 0 } }, data: { usageCount: { decrement: 1 } } });
+      await m.Coupon.updateOne({ code: order.couponCode, usageCount: { $gt: 0 } }, { $inc: { usageCount: -1 } }, { session });
     }
-    await tx.activityLog.create({
-      data: { adminName: 'System', action: `Cancelled unpaid order ${orderId}`, details: reason },
-    });
+    await m.ActivityLog.create([{ adminName: 'System', action: `Cancelled unpaid order ${orderId}`, details: reason }], { session });
     return true;
   });
+
   if (cancelled) {
     try {
       revalidateCatalog();
@@ -62,19 +64,25 @@ export async function cancelPendingOrder(orderId: string, reason: string): Promi
 
 /** Online orders that were never paid (customer closed the tab) shouldn't hold stock forever. */
 export async function releaseExpiredPendingOrders(maxAgeMinutes = 30): Promise<void> {
+  const { Order } = await db();
   const cutoff = new Date(Date.now() - maxAgeMinutes * 60 * 1000);
-  const stale = await prisma.order.findMany({
-    where: { paymentMethod: { not: 'COD' }, orderStatus: 'Pending Payment', paymentStatus: 'Pending', date: { lt: cutoff } },
-    select: { id: true },
-    take: 50,
-  });
-  for (const { id } of stale) {
-    await cancelPendingOrder(id, `Payment not completed within ${maxAgeMinutes} minutes`).catch((err) => console.error(err));
+  const stale = await Order.find({
+    paymentMethod: { $ne: 'COD' },
+    orderStatus: 'Pending Payment',
+    paymentStatus: 'Pending',
+    date: { $lt: cutoff },
+  })
+    .select('_id')
+    .limit(50)
+    .lean();
+
+  for (const { _id } of stale) {
+    await cancelPendingOrder(_id, `Payment not completed within ${maxAgeMinutes} minutes`).catch((err) => console.error(err));
   }
 }
 
 export interface PaidResult {
-  order: NonNullable<Awaited<ReturnType<typeof prisma.order.findUnique>>>;
+  order: HydratedDocument<IOrder>;
   /** true when this call was a repeat (verify + webhook both fire) and nothing changed. */
   alreadyPaid: boolean;
   /** true when the money arrived for an order we had already cancelled and could not re-stock. */
@@ -83,46 +91,44 @@ export interface PaidResult {
 
 /** Idempotent: safe to call from both the browser verify step and the Razorpay webhook. */
 export async function markOrderPaid(orderId: string, paymentRef: string): Promise<PaidResult | null> {
-  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  const m = await db();
+  const order = await m.Order.findById(orderId);
   if (!order) return null;
   if (order.paymentStatus === 'Paid') return { order, alreadyPaid: true, needsRefund: false };
 
   if (order.orderStatus === 'Pending Payment') {
-    const res = await prisma.order.updateMany({
-      where: { id: orderId, paymentStatus: 'Pending', orderStatus: 'Pending Payment' },
-      data: { paymentStatus: 'Paid', orderStatus: 'Payment Confirmed', paymentRef },
-    });
-    const fresh = (await prisma.order.findUnique({ where: { id: orderId } }))!;
-    return { order: fresh, alreadyPaid: res.count === 0, needsRefund: false };
+    const res = await m.Order.updateOne(
+      { _id: orderId, paymentStatus: 'Pending', orderStatus: 'Pending Payment' },
+      { $set: { paymentStatus: 'Paid', orderStatus: 'Payment Confirmed', paymentRef } }
+    );
+    const fresh = (await m.Order.findById(orderId))!;
+    return { order: fresh, alreadyPaid: res.modifiedCount === 0, needsRefund: false };
   }
 
   if (order.orderStatus === 'Cancelled') {
     // Payment landed after we released the stock. Try to take the stock back; otherwise flag a refund.
     try {
-      await prisma.$transaction(async (tx) => {
+      await withTransaction(async (session) => {
         for (const item of storedItems(order.items)) {
-          const r = await tx.product.updateMany({
-            where: { id: item.productId, stock: { gte: item.quantity } },
-            data: { stock: { decrement: item.quantity } },
-          });
-          if (r.count === 0) throw new OrderError('Stock no longer available', 409);
+          const r = await m.Product.updateOne({ _id: item.productId, stock: { $gte: item.quantity } }, { $inc: { stock: -item.quantity } }, { session });
+          if (r.modifiedCount === 0) throw new OrderError('Stock no longer available', 409);
         }
-        await tx.order.update({
-          where: { id: orderId },
-          data: { paymentStatus: 'Paid', orderStatus: 'Payment Confirmed', paymentRef },
-        });
-        await tx.activityLog.create({
-          data: { adminName: 'System', action: `Reinstated order ${orderId}`, details: 'Payment arrived after the order was auto-cancelled.' },
-        });
+        await m.Order.updateOne({ _id: orderId }, { $set: { paymentStatus: 'Paid', orderStatus: 'Payment Confirmed', paymentRef } }, { session });
+        await m.ActivityLog.create(
+          [{ adminName: 'System', action: `Reinstated order ${orderId}`, details: 'Payment arrived after the order was auto-cancelled.' }],
+          { session }
+        );
       });
-      return { order: (await prisma.order.findUnique({ where: { id: orderId } }))!, alreadyPaid: false, needsRefund: false };
+      return { order: (await m.Order.findById(orderId))!, alreadyPaid: false, needsRefund: false };
     } catch (err) {
       if (!(err instanceof OrderError)) throw err;
-      const updated = await prisma.order.update({ where: { id: orderId }, data: { paymentStatus: 'Paid', paymentRef } });
-      await prisma.activityLog.create({
-        data: { adminName: 'System', action: `REFUND NEEDED for order ${orderId}`, details: `Payment ${paymentRef} received but the order was cancelled and stock is gone.` },
+      await m.Order.updateOne({ _id: orderId }, { $set: { paymentStatus: 'Paid', paymentRef } });
+      await m.ActivityLog.create({
+        adminName: 'System',
+        action: `REFUND NEEDED for order ${orderId}`,
+        details: `Payment ${paymentRef} received but the order was cancelled and stock is gone.`,
       });
-      return { order: updated, alreadyPaid: false, needsRefund: true };
+      return { order: (await m.Order.findById(orderId))!, alreadyPaid: false, needsRefund: true };
     }
   }
 
@@ -130,17 +136,12 @@ export async function markOrderPaid(orderId: string, paymentRef: string): Promis
 }
 
 /** After a failed or abandoned payment, put the customer's items back in their cart. */
-export async function restoreCartFromOrder(sessionId: string, order: { items: unknown; couponCode: string | null }) {
+export async function restoreCartFromOrder(sessionId: string, order: { items: unknown; couponCode?: string | null }) {
+  const { Product } = await db();
   for (const item of storedItems(order.items)) {
-    const product = await prisma.product.findUnique({ where: { id: item.productId }, select: { id: true } });
-    if (!product) continue;
-    await prisma.cartItem.upsert({
-      where: { sessionId_productId_selectedVariantId: { sessionId, productId: item.productId, selectedVariantId: '' } },
-      create: { sessionId, productId: item.productId, quantity: item.quantity, selectedVariantId: '' },
-      update: { quantity: item.quantity },
-    });
+    if (!(await Product.exists({ _id: item.productId }))) continue;
+    const updated = await setCartItemQuantity(sessionId, item.productId, '', item.quantity);
+    if (!updated) await addCartItem(sessionId, item.productId, '', item.quantity);
   }
-  if (order.couponCode) {
-    await prisma.cartSession.update({ where: { id: sessionId }, data: { activeCouponCode: order.couponCode } });
-  }
+  if (order.couponCode) await setCartCoupon(sessionId, order.couponCode);
 }

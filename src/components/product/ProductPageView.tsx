@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Star, CheckCircle2, AlertCircle, Truck, ShieldCheck, RefreshCw, MessageCircle } from 'lucide-react';
+import { Star, CheckCircle2, AlertCircle, Truck, ShieldCheck, RefreshCw, MessageCircle, PlayCircle } from 'lucide-react';
+import { optimizeImage, videoPoster } from '@/lib/media';
 import { Product } from '@/types';
 import { useLuminary } from '@/context/LuminaryContext';
 import { useShell } from '@/components/layout/StoreShell';
@@ -16,7 +17,8 @@ export const ProductPageView: React.FC<{ product: Product }> = ({ product: initi
 
   // Prefer the live copy so stock and price stay current after the page was cached.
   const product = products.find((p) => p.id === initial.id) ?? initial;
-  const [image, setImage] = useState(product.images[0] ?? '');
+  const videos = product.videos ?? [];
+  const [active, setActive] = useState<{ type: 'image' | 'video'; url: string }>({ type: 'image', url: product.images[0] ?? '' });
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
 
@@ -46,17 +48,32 @@ export const ProductPageView: React.FC<{ product: Product }> = ({ product: initi
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 bg-white rounded-3xl border border-stone-200 p-5 sm:p-8">
         <div className="space-y-3">
           <div className="aspect-square rounded-2xl overflow-hidden bg-stone-100">
-            <img src={image || product.images[0]} alt={product.name} className="w-full h-full object-cover" />
+            {active.type === 'video' ? (
+              <video key={active.url} src={active.url} poster={videoPoster(active.url, 900)} controls playsInline preload="metadata" className="w-full h-full object-contain bg-black" />
+            ) : (
+              <img src={optimizeImage(active.url || product.images[0], 900)} alt={product.name} className="w-full h-full object-cover" />
+            )}
           </div>
-          {product.images.length > 1 && (
+          {(product.images.length > 1 || videos.length > 0) && (
             <div className="flex gap-2 overflow-x-auto">
               {product.images.map((img) => (
                 <button
                   key={img}
-                  onClick={() => setImage(img)}
-                  className={`w-16 h-16 rounded-lg overflow-hidden border-2 shrink-0 ${image === img ? 'border-brand-green-600' : 'border-transparent opacity-70 hover:opacity-100'}`}
+                  onClick={() => setActive({ type: 'image', url: img })}
+                  className={`w-16 h-16 rounded-lg overflow-hidden border-2 shrink-0 ${active.url === img ? 'border-brand-green-600' : 'border-transparent opacity-70 hover:opacity-100'}`}
                 >
-                  <img src={img} alt="" className="w-full h-full object-cover" />
+                  <img src={optimizeImage(img, 160)} alt="" className="w-full h-full object-cover" />
+                </button>
+              ))}
+              {videos.map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setActive({ type: 'video', url: v })}
+                  aria-label="Play product video"
+                  className={`relative w-16 h-16 rounded-lg overflow-hidden border-2 shrink-0 bg-slate-800 ${active.url === v ? 'border-brand-green-600' : 'border-transparent opacity-80 hover:opacity-100'}`}
+                >
+                  {videoPoster(v, 160) && <img src={videoPoster(v, 160)} alt="" className="w-full h-full object-cover" />}
+                  <PlayCircle className="absolute inset-0 m-auto w-6 h-6 text-white drop-shadow" />
                 </button>
               ))}
             </div>

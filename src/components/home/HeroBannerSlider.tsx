@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { useLuminary } from '@/context/LuminaryContext';
+import { optimizeImage } from '@/lib/media';
 
 interface HeroBannerSliderProps {
   onSelectProduct: (productId: string) => void;
@@ -65,7 +66,7 @@ export const HeroBannerSlider: React.FC<HeroBannerSliderProps> = ({ onSelectProd
           </div>
 
           <div className="order-1 md:order-2 relative h-56 md:h-auto md:rounded-l-[120px] overflow-hidden">
-            <img key={banner.id} src={banner.imageUrl} alt={banner.title} className="absolute inset-0 w-full h-full object-cover" />
+            <img key={banner.id} src={optimizeImage(banner.imageUrl, 1200)} alt={banner.title} className="absolute inset-0 w-full h-full object-cover" />
             {activeBanners.length > 1 && (
               <div className="absolute bottom-4 right-4 flex gap-2">
                 <button

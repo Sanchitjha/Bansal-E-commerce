@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { X, Trash2, Tag, ShoppingBag, ArrowRight, Truck, Check, Layers, MessageCircle } from 'lucide-react';
 import { useLuminary } from '@/context/LuminaryContext';
+import { optimizeImage } from '@/lib/media';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -120,7 +121,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 className="p-3.5 rounded-xl bg-stone-50 border border-stone-200 flex gap-3 relative group hover:border-stone-200 transition"
               >
                 <div className="w-16 h-16 rounded-lg overflow-hidden bg-white border border-stone-200 shrink-0">
-                  <img src={item.product.images[0]} alt="" className="w-full h-full object-cover" />
+                  <img src={optimizeImage(item.product.images[0], 160)} alt="" className="w-full h-full object-cover" />
                 </div>
 
                 <div className="flex-1 min-w-0 flex flex-col justify-between">

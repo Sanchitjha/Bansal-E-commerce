@@ -26,7 +26,7 @@ export const INITIAL_HERO_BANNERS: HeroBanner[] = [
     discountTag: 'UP TO 40% OFF',
     buttonText: 'SHOP EXCLUSIVE COLLECTION',
     destinationUrl: '/fragrance',
-    imageUrl: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=1200&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1733660227163-01bc46e0d7d7?auto=format&fit=crop&w=1200&q=80',
     priority: 1,
     isActive: true,
     productId: 'prod-1',
@@ -52,7 +52,7 @@ export const INITIAL_HERO_BANNERS: HeroBanner[] = [
     discountTag: 'NEW ARRIVAL SPECIAL',
     buttonText: 'EXPLORE LIFESTYLE GADGETS',
     destinationUrl: '/gadgets',
-    imageUrl: 'https://images.unsplash.com/photo-1546554137-f86b9593a222?auto=format&fit=crop&w=1200&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1732229035217-e7e42f61af4b?auto=format&fit=crop&w=1200&q=80',
     priority: 3,
     isActive: true,
     productId: 'prod-7',
@@ -71,8 +71,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     shortDescription: 'Sumptuous blend of rare Cambodian Oud, Damascus Rose, and Warm Amber.',
     longDescription: 'Crafted for royalty, Luminary Royal Imperial Oud opens with hypnotic top notes of Bulgarian Rose and Cardamom, lingering into a heart of Aged Assam Aquilaria Wood, before setting into a velvet base of Vanilla, White Musk, and Golden Amber.',
     images: [
-      'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1733660227163-01bc46e0d7d7?auto=format&fit=crop&w=800&q=80',
     ],
     mrp: 2999,
     sellingPrice: 1799,
@@ -117,7 +116,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     shortDescription: 'Pure non-alcoholic concentrated perfume oil steeped in Mysorean Sandalwood.',
     longDescription: 'An ancient distillation process capturing the warmth of toasted spices, Saffron, Patchouli, and pure Mysorean Sandalwood. Zero alcohol formulation with 24-hour lasting fragrance aura.',
     images: [
-      'https://images.unsplash.com/photo-1616949755610-8c9bbc08f138?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1571206508927-2ef3026ada5d?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=800&q=80',
     ],
     mrp: 1499,
     sellingPrice: 899,
@@ -160,7 +160,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     shortDescription: 'Curated 4-piece discovery coffret set packaged in velvet-flocked gold foil box.',
     longDescription: 'Features 4 signature fragrances: Velvet Rose, Golden Amber, Oceanic Breeze, and Imperial Musk. Perfect for corporate gifting, weddings, and anniversaries.',
     images: [
-      'https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1636833777376-4487142e8e17?auto=format&fit=crop&w=800&q=80',
     ],
     mrp: 3499,
     sellingPrice: 2299,
@@ -206,6 +206,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     longDescription: 'Formulated following classical Ayurvedic texts, this luxurious night treatment brightens hyperpigmentation, smooths fine lines, and imparts a luminescent golden glow.',
     images: [
       'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1671493234254-15fc6c91aa87?auto=format&fit=crop&w=800&q=80',
     ],
     mrp: 2499,
     sellingPrice: 1499,
@@ -248,7 +249,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     shortDescription: 'Cold-pressed Sesame oil slow-cooked with 18 hair strengthening herbs.',
     longDescription: 'Deep nourishing hair root elixir that prevents premature greying, reduces hair fall by 89%, and promotes dense new hair growth.',
     images: [
-      'https://images.unsplash.com/photo-1601049541289-9b1b7bbbfe19?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1671493229048-4dddd00ca84a?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1573575154488-f88a60e170df?auto=format&fit=crop&w=800&q=80',
     ],
     mrp: 1299,
     sellingPrice: 799,
@@ -293,7 +295,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     shortDescription: 'Whisper-quiet 500ml Smart WiFi diffuser with 16 Million RGB ambient lighting.',
     longDescription: 'Sleek wood-grain ultrasonic diffuser with auto shut-off, smartphone app control, Alexa & Google Home compatibility, and whisper-quiet mist technology.',
     images: [
-      'https://images.unsplash.com/photo-1546554137-f86b9593a222?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1732229035217-e7e42f61af4b?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1672925216623-f32a54d732e0?auto=format&fit=crop&w=800&q=80',
     ],
     mrp: 3999,
     sellingPrice: 2499,
@@ -336,7 +339,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     shortDescription: '2-in-1 rechargeable nanometer perfume sprayer with 5000mAh built-in power bank.',
     longDescription: 'Ultra-portable aluminum alloy gadget that converts fine fragrance into ultra-dense nanometer mist while keeping your smartphone charged on the go.',
     images: [
-      'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1594125311687-3b1b3eafa9f4?auto=format&fit=crop&w=800&q=80',
     ],
     mrp: 1999,
     sellingPrice: 1199,

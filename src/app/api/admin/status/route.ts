@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, unauthorized } from '@/lib/api-helpers';
 import { emailConfigured } from '@/lib/email';
+import { cloudinaryConfigured } from '@/lib/cloudinary';
 import { razorpayConfigured } from '@/lib/payments';
 import { siteUrl } from '@/lib/site';
 
@@ -13,7 +14,8 @@ export async function GET(request: NextRequest) {
     razorpay: razorpayConfigured(),
     razorpayWebhook: !!process.env.RAZORPAY_WEBHOOK_SECRET,
     email: emailConfigured(),
-    imageUpload: !!process.env.BLOB_READ_WRITE_TOKEN,
+    mediaUpload: cloudinaryConfigured(),
+    database: !!process.env.MONGODB_URI,
     siteUrl: siteUrl(),
   });
 }

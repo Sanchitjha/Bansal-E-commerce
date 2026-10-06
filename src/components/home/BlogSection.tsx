@@ -5,7 +5,7 @@ const POSTS = [
     tag: 'Fragrance',
     title: 'How to Make Your Perfume Last All Day',
     excerpt: 'Simple layering and application tricks that keep your favourite scent fresh from morning to night.',
-    image: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=600&q=80',
+    image: 'https://images.unsplash.com/photo-1733660227163-01bc46e0d7d7?auto=format&fit=crop&w=600&q=80',
   },
   {
     tag: 'Ayurveda',
@@ -17,13 +17,13 @@ const POSTS = [
     tag: 'Lifestyle',
     title: 'Choosing the Right Diffuser for Your Room',
     excerpt: 'Mist output, tank size and noise levels: what to check before you buy an aroma diffuser.',
-    image: 'https://images.unsplash.com/photo-1546554137-f86b9593a222?auto=format&fit=crop&w=600&q=80',
+    image: 'https://images.unsplash.com/photo-1732229035217-e7e42f61af4b?auto=format&fit=crop&w=600&q=80',
   },
   {
     tag: 'Ayurveda',
     title: 'A Gentle Seasonal Self-Care Routine',
     excerpt: 'Small daily habits inspired by Ayurveda to help you feel balanced as the seasons change.',
-    image: 'https://images.unsplash.com/photo-1601049541289-9b1b7bbbfe19?auto=format&fit=crop&w=600&q=80',
+    image: 'https://images.unsplash.com/photo-1573575154488-f88a60e170df?auto=format&fit=crop&w=600&q=80',
   },
 ];
 

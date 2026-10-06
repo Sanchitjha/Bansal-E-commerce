@@ -4,6 +4,7 @@ import React from 'react';
 import { ArrowRight } from 'lucide-react';
 import { useLuminary } from '@/context/LuminaryContext';
 import { CategoryType } from '@/types';
+import { optimizeImage } from '@/lib/media';
 
 export const ShopByCategories: React.FC = () => {
   const { products, setActiveCategoryFilter } = useLuminary();
@@ -47,7 +48,7 @@ export const ShopByCategories: React.FC = () => {
               onClick={() => openCategory(item.category)}
               className="w-[calc(50%-8px)] sm:w-[calc(33.333%-11px)] lg:w-[calc(16.666%-14px)] bg-white rounded-2xl p-5 flex flex-col items-center gap-3 text-center hover:-translate-y-1 hover:shadow-xl transition"
             >
-              <img src={item.image} alt={item.name} className="w-16 h-16 rounded-xl object-cover bg-stone-100" />
+              <img src={optimizeImage(item.image, 160)} alt={item.name} className="w-16 h-16 rounded-xl object-cover bg-stone-100" />
               <div>
                 <div className="text-sm font-semibold text-slate-900 leading-tight">{item.name}</div>
                 <div className="text-xs text-slate-500 mt-1">

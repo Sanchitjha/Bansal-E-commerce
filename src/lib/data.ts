@@ -1,5 +1,5 @@
 import { revalidateTag, unstable_cache } from 'next/cache';
-import { prisma } from './prisma';
+import { db, plain } from './models';
 import type { HeroBanner, Product, SiteSettings } from '@/types';
 
 export interface Catalog {
@@ -8,8 +8,19 @@ export interface Catalog {
   settings: SiteSettings | null;
 }
 
-// Dates and Json columns are flattened to plain JSON so server HTML and client state agree exactly.
-const plain = <T,>(value: unknown): T => JSON.parse(JSON.stringify(value)) as T;
+/** A dropped connection at build or cold start is brief; retry rather than fail the whole page. */
+async function withRetry<T>(fn: () => Promise<T>, attempts = 4): Promise<T> {
+  let lastError: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err;
+      await new Promise((resolve) => setTimeout(resolve, 400 * (i + 1) ** 2));
+    }
+  }
+  throw lastError;
+}
 
 /**
  * Storefront data rendered into the HTML (so search engines see products) and handed to the client
@@ -17,14 +28,17 @@ const plain = <T,>(value: unknown): T => JSON.parse(JSON.stringify(value)) as T;
  */
 export const getCatalog = unstable_cache(
   async (): Promise<Catalog> => {
-    const [products, heroBanners, settings] = await Promise.all([
-      prisma.product.findMany({ where: { status: 'active' }, orderBy: [{ priorityOrder: 'asc' }, { createdAt: 'desc' }] }),
-      prisma.heroBanner.findMany({ where: { isActive: true }, orderBy: { priority: 'asc' } }),
-      prisma.siteSettings.findUnique({ where: { id: 'singleton' } }),
-    ]);
+    const { Product, HeroBanner, SiteSettings } = await db();
+    const [products, heroBanners, settings] = await withRetry(() =>
+      Promise.all([
+        Product.find({ status: 'active' }).sort({ priorityOrder: 1, createdAt: -1 }),
+        HeroBanner.find({ isActive: true }).sort({ priority: 1 }),
+        SiteSettings.findById('singleton'),
+      ])
+    );
     return plain<Catalog>({ products, heroBanners, settings });
   },
-  ['storefront-catalog-v1'],
+  ['storefront-catalog-v2'],
   { tags: ['catalog'], revalidate: 300 }
 );
 

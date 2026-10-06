@@ -1,8 +1,9 @@
-import { prisma } from './prisma';
+import { db } from './models';
 import { adminNewOrderEmail, orderConfirmationEmail, orderStatusEmail, sendEmail, type MailOrder } from './email';
 
 async function brandAndAdminEmail() {
-  const settings = await prisma.siteSettings.findUnique({ where: { id: 'singleton' } });
+  const { SiteSettings } = await db();
+  const settings = await SiteSettings.findById('singleton').lean();
   return { brand: settings?.websiteName ?? 'Luminary', adminEmail: settings?.contactEmail ?? '' };
 }
 

@@ -56,7 +56,7 @@ export default async function InvoicePage({ params, searchParams }: { params: { 
           </div>
           <div className="sm:text-right">
             <div className="text-xs font-bold tracking-widest text-brand-orange-600">TAX INVOICE</div>
-            <p className="text-sm text-slate-700 mt-1">Invoice no: <b>{order.id}</b></p>
+            <p className="text-sm text-slate-700 mt-1">Invoice no: <b>{order._id}</b></p>
             <p className="text-sm text-slate-700">Date: {order.date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
             <p className="text-sm text-slate-700">Payment: {order.paymentMethod} ({order.paymentStatus})</p>
           </div>

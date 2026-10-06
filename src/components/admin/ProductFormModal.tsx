@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { X, Plus, Trash2, Upload } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Plus, Trash2, Upload, Film } from 'lucide-react';
 import { useLuminary } from '@/context/LuminaryContext';
 import { BulkSlab, CategoryType, Product } from '@/types';
 import { btnGold, errorBox, errText, inputCls, labelCls } from './ui';
+import { uploadImage, uploadVideo, useUploadEnabled } from './upload';
 
 const slugify = (s: string) =>
   s
@@ -53,17 +54,11 @@ export const ProductFormModal: React.FC<Props> = ({ product, onClose }) => {
   const [images, setImages] = useState<string[]>(product?.images?.length ? product.images : ['']);
   const [slabs, setSlabs] = useState<BulkSlab[]>(product?.bulkSlabs ?? []);
   const [slugTouched, setSlugTouched] = useState(isEdit);
-  const [uploadEnabled, setUploadEnabled] = useState(false);
+  const uploadEnabled = useUploadEnabled();
+  const [videos, setVideos] = useState<string[]>(product?.videos ?? []);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    fetch('/api/admin/upload')
-      .then((r) => (r.ok ? r.json() : { enabled: false }))
-      .then((d) => setUploadEnabled(!!d.enabled))
-      .catch(() => {});
-  }, []);
 
   const set = <K extends keyof typeof f>(key: K, value: (typeof f)[K]) => setF((prev) => ({ ...prev, [key]: value }));
 
@@ -71,16 +66,13 @@ export const ProductFormModal: React.FC<Props> = ({ product, onClose }) => {
     setF((prev) => ({ ...prev, name, urlSlug: slugTouched ? prev.urlSlug : slugify(name) }));
   };
 
-  const upload = async (file: File, index: number) => {
+  const upload = async (file: File, kind: 'image' | 'video', index: number) => {
     setUploading(true);
     setError(null);
     try {
-      const body = new FormData();
-      body.append('file', file);
-      const res = await fetch('/api/admin/upload', { method: 'POST', body });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Upload failed');
-      setImages((prev) => prev.map((img, i) => (i === index ? data.url : img)));
+      const url = await (kind === 'image' ? uploadImage(file) : uploadVideo(file));
+      if (kind === 'image') setImages((prev) => prev.map((img, i) => (i === index ? url : img)));
+      else setVideos((prev) => prev.map((v, i) => (i === index ? url : v)));
     } catch (err) {
       setError(errText(err, 'Upload failed'));
     } finally {
@@ -100,6 +92,7 @@ export const ProductFormModal: React.FC<Props> = ({ product, onClose }) => {
     const gstRate = num(f.gstRate);
     const weightKg = f.weightKg === '' ? 0 : num(f.weightKg);
     const cleanImages = images.map((i) => i.trim()).filter(Boolean);
+    const cleanVideos = videos.map((v) => v.trim()).filter(Boolean);
     const cleanSlabs = [...slabs].sort((a, b) => a.minQty - b.minQty);
 
     if (!f.name.trim() || !f.sku.trim()) return setError('Name and SKU are required.');
@@ -131,6 +124,7 @@ export const ProductFormModal: React.FC<Props> = ({ product, onClose }) => {
         shortDescription: f.shortDescription.trim(),
         longDescription: f.longDescription.trim(),
         images: cleanImages,
+        videos: cleanVideos,
         mrp,
         sellingPrice,
         costPrice,
@@ -280,7 +274,7 @@ export const ProductFormModal: React.FC<Props> = ({ product, onClose }) => {
                       className="hidden"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
-                        if (file) upload(file, i);
+                        if (file) upload(file, 'image', i);
                         e.target.value = '';
                       }}
                     />
@@ -296,8 +290,39 @@ export const ProductFormModal: React.FC<Props> = ({ product, onClose }) => {
                 <Plus className="w-3.5 h-3.5" /> Add another image
               </button>
               {uploading && <span className="text-[11px] text-slate-400">Uploading…</span>}
-              {!uploadEnabled && <span className="text-[11px] text-slate-500">File upload is not connected yet. Paste image links for now.</span>}
+              {!uploadEnabled && <span className="text-[11px] text-slate-500">Upload is not connected yet (Cloudinary). Paste links for now.</span>}
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className={labelCls}>Videos (optional, shown on the product page)</label>
+            {videos.map((v, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <Film className="w-4 h-4 text-slate-500 shrink-0" />
+                <input className={inputCls} placeholder="https://… video link (MP4 / WebM)" value={v} onChange={(e) => setVideos((prev) => prev.map((x, idx) => (idx === i ? e.target.value : x)))} />
+                {uploadEnabled && (
+                  <label className="shrink-0 cursor-pointer px-2.5 py-2 rounded bg-obsidian-950 border border-slate-700 text-gold-300 hover:border-gold-500/60" title="Upload video (max 100 MB)">
+                    <Upload className="w-4 h-4" />
+                    <input
+                      type="file"
+                      accept="video/mp4,video/webm,video/quicktime"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) upload(file, 'video', i);
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
+                )}
+                <button type="button" onClick={() => setVideos((prev) => prev.filter((_, idx) => idx !== i))} className="text-slate-500 hover:text-rose-400 shrink-0" aria-label="Remove video">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+            <button type="button" onClick={() => setVideos((prev) => [...prev, ''])} className="text-xs text-gold-300 font-semibold flex items-center gap-1">
+              <Plus className="w-3.5 h-3.5" /> Add a video
+            </button>
           </div>
 
           <div className="space-y-3 pt-3 border-t border-slate-800">

@@ -38,6 +38,7 @@ export interface Product {
   shortDescription: string;
   longDescription: string;
   images: string[];
+  videos?: string[];
   mrp: number;
   sellingPrice: number;
   costPrice: number; // Hidden from customer

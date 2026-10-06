@@ -4,6 +4,7 @@ import React from 'react';
 import { ArrowRight } from 'lucide-react';
 import { useLuminary } from '@/context/LuminaryContext';
 import { Product } from '@/types';
+import { optimizeImage } from '@/lib/media';
 
 interface DealsAndBulkSectionProps {
   onOpenBulkModal: (product?: Product) => void;
@@ -43,7 +44,7 @@ export const DealsAndBulkSection: React.FC<DealsAndBulkSectionProps> = ({ onOpen
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {deals.map(({ product, best, saving }) => (
           <div key={product.id} className="bg-white rounded-2xl border border-stone-200 p-4 flex items-center gap-4">
-            <img src={product.images[0]} alt={product.name} className="w-24 h-24 rounded-xl object-cover bg-stone-100 shrink-0" />
+            <img src={optimizeImage(product.images[0], 240)} alt={product.name} className="w-24 h-24 rounded-xl object-cover bg-stone-100 shrink-0" />
             <div className="flex-1 min-w-0">
               <span className="text-[11px] font-bold tracking-wider text-brand-orange-500">SAVE {saving}%</span>
               <h3 className="text-[15px] font-semibold text-slate-900 leading-snug line-clamp-2">{product.name}</h3>

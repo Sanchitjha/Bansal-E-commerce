@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { prisma } from './prisma';
+import { db } from './models';
 
 const MAX_FAILURES = 5;
 const WINDOW_MS = 15 * 60 * 1000;
@@ -12,32 +12,37 @@ export function clientIp(request: NextRequest): string {
 
 /** Seconds left on the longest active lock across the given keys (0 = not locked). */
 export async function lockSecondsRemaining(keys: string[]): Promise<number> {
-  const rows = await prisma.loginAttempt.findMany({ where: { key: { in: keys }, lockedUntil: { gt: new Date() } } });
+  const { LoginAttempt } = await db();
+  const rows = await LoginAttempt.find({ _id: { $in: keys }, lockedUntil: { $gt: new Date() } }).lean();
   if (rows.length === 0) return 0;
   const until = Math.max(...rows.map((r) => r.lockedUntil!.getTime()));
   return Math.ceil((until - Date.now()) / 1000);
 }
 
 export async function recordFailure(keys: string[]): Promise<void> {
+  const { LoginAttempt } = await db();
   const now = Date.now();
   for (const key of keys) {
-    const row = await prisma.loginAttempt.findUnique({ where: { key } });
+    const row = await LoginAttempt.findById(key).lean();
     const windowExpired = !row || now - row.windowStart.getTime() > WINDOW_MS;
     const failures = windowExpired ? 1 : row.failures + 1;
-    await prisma.loginAttempt.upsert({
-      where: { key },
-      create: { key, failures, windowStart: new Date(now), lockedUntil: failures >= MAX_FAILURES ? new Date(now + LOCK_MS) : null },
-      update: {
-        failures,
-        windowStart: windowExpired ? new Date(now) : row.windowStart,
-        lockedUntil: failures >= MAX_FAILURES ? new Date(now + LOCK_MS) : null,
+    await LoginAttempt.updateOne(
+      { _id: key },
+      {
+        $set: {
+          failures,
+          windowStart: windowExpired ? new Date(now) : row.windowStart,
+          lockedUntil: failures >= MAX_FAILURES ? new Date(now + LOCK_MS) : null,
+        },
       },
-    });
+      { upsert: true }
+    );
   }
 }
 
 export async function clearFailures(keys: string[]): Promise<void> {
-  await prisma.loginAttempt.deleteMany({ where: { key: { in: keys } } });
+  const { LoginAttempt } = await db();
+  await LoginAttempt.deleteMany({ _id: { $in: keys } });
 }
 
 export function lockedMessage(seconds: number): string {
