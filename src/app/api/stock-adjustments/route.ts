@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidateCatalog } from '@/lib/data';
 import { prisma } from '@/lib/prisma';
 import { badRequest, notFound, requireAdmin, serverError, unauthorized } from '@/lib/api-helpers';
 
@@ -28,6 +29,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    revalidateCatalog();
     return NextResponse.json(product);
   } catch (err) {
     return serverError(err);
