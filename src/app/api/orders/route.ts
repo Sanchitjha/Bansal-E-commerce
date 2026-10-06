@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { revalidateCatalog } from '@/lib/data';
 import { attachCartCookie, getExistingCartSessionId } from '@/lib/cart-session';
 import { badRequest, requireAdmin, serverError, unauthorized } from '@/lib/api-helpers';
 import { buildCartPayload } from '@/lib/cart-response';
@@ -189,6 +190,7 @@ export async function POST(request: NextRequest) {
       }
     }
     if (!order) throw new Error('Could not allocate an order id');
+    revalidateCatalog();
 
     if (!isOnline) {
       await sendOrderPlacedEmails(order);
