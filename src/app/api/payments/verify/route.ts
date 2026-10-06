@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/models';
 import { badRequest, notFound, serverError } from '@/lib/api-helpers';
 import { verifyPaymentSignature } from '@/lib/payments';
 import { markOrderPaid } from '@/lib/orders';
@@ -13,7 +13,8 @@ export async function POST(request: NextRequest) {
       return badRequest('Missing payment details.');
     }
 
-    const order = await prisma.order.findUnique({ where: { id: String(orderId) } });
+    const { Order } = await db();
+    const order = await Order.findById(String(orderId));
     if (!order) return notFound('Order not found');
     if (!order.gatewayOrderId || order.gatewayOrderId !== razorpay_order_id) {
       return badRequest('Payment does not match this order.');
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
       return badRequest('Payment verification failed.');
     }
 
-    const result = await markOrderPaid(order.id, razorpay_payment_id);
+    const result = await markOrderPaid(order._id, razorpay_payment_id);
     if (!result) return notFound('Order not found');
 
     if (!result.alreadyPaid && !result.needsRefund) await sendOrderPlacedEmails(result.order);
