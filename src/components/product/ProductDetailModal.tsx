@@ -43,10 +43,13 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   const currentUnitPrice = getUnitPriceForProduct(product, quantity);
   const totalPrice = currentUnitPrice * quantity;
 
-  const handleAddToCart = () => {
-    addToCart(product, quantity);
-    setAddedSuccess(true);
-    setTimeout(() => setAddedSuccess(false), 2000);
+  const handleAddToCart = async (): Promise<boolean> => {
+    const ok = await addToCart(product, quantity);
+    if (ok) {
+      setAddedSuccess(true);
+      setTimeout(() => setAddedSuccess(false), 2000);
+    }
+    return ok;
   };
 
   const handleWhatsAppChat = () => {
@@ -141,6 +144,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               <p className="text-xs text-slate-700 mt-2 leading-relaxed">
                 {product.shortDescription}
               </p>
+              <a href={`/product/${product.urlSlug}`} className="inline-block mt-1.5 text-xs font-semibold text-brand-green-700 hover:underline">
+                Open full product page →
+              </a>
 
               {/* Dynamic Pricing Display */}
               <div className="mt-4 p-3 rounded-xl bg-stone-50 border border-stone-200 flex items-center justify-between">
@@ -257,9 +263,8 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 </button>
 
                 <button
-                  onClick={() => {
-                    handleAddToCart();
-                    onDirectBuy(product, quantity);
+                  onClick={async () => {
+                    if (await handleAddToCart()) onDirectBuy(product, quantity);
                   }}
                   disabled={product.stock <= 0}
                   className="py-3 rounded-xl bg-brand-orange-500 hover:bg-brand-orange-600 text-white  font-bold text-xs uppercase tracking-wider shadow-md hover:scale-105 transition "

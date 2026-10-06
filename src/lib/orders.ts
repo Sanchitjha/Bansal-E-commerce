@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { prisma } from './prisma';
+import { revalidateCatalog } from './data';
 
 export class OrderError extends Error {
   constructor(message: string, public status = 400) {
@@ -28,7 +29,7 @@ export function newOrderId(): string {
  * Guarded so a second call, or a call after payment, does nothing.
  */
 export async function cancelPendingOrder(orderId: string, reason: string): Promise<boolean> {
-  return prisma.$transaction(async (tx) => {
+  const cancelled = await prisma.$transaction(async (tx) => {
     const res = await tx.order.updateMany({
       where: { id: orderId, orderStatus: 'Pending Payment', paymentStatus: 'Pending' },
       data: { orderStatus: 'Cancelled', paymentStatus: 'Failed' },
@@ -49,6 +50,14 @@ export async function cancelPendingOrder(orderId: string, reason: string): Promi
     });
     return true;
   });
+  if (cancelled) {
+    try {
+      revalidateCatalog();
+    } catch {
+      // Not inside a request (e.g. a script): the cache simply refreshes on its own schedule.
+    }
+  }
+  return cancelled;
 }
 
 /** Online orders that were never paid (customer closed the tab) shouldn't hold stock forever. */

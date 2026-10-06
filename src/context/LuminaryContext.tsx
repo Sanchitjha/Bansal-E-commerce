@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import {
   Product,
   CartItem,
@@ -16,6 +16,8 @@ import {
   CategoryType,
   ReviewItem,
 } from '@/types';
+import { DEFAULT_SETTINGS } from '@/lib/default-settings';
+import { computeCartTotals, getUnitPriceForProduct as unitPriceFor } from '@/lib/pricing';
 
 interface CartTotals {
   subtotal: number;
@@ -37,17 +39,58 @@ interface AdminSession {
   name: string;
 }
 
+export interface CustomerProfile {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+}
+
+export interface RazorpayInit {
+  keyId: string;
+  gatewayOrderId: string;
+  amount: number;
+  name: string;
+  prefill: { name: string; email: string; contact: string };
+}
+
+export interface PlaceOrderResult {
+  order: Order;
+  razorpay?: RazorpayInit;
+}
+
+export interface CheckoutDetails {
+  customerName: string;
+  phone: string;
+  email: string;
+  shippingAddress: string;
+  city: string;
+  state: string;
+  pincode: string;
+  paymentMethod: 'Razorpay' | 'COD';
+}
+
+export interface InitialStoreData {
+  products: Product[];
+  heroBanners: HeroBanner[];
+  settings: SiteSettings | null;
+}
+
+export type ToastType = 'error' | 'success' | 'info';
+
 type ProductInput = Omit<Product, 'id' | 'createdAt' | 'updatedAt'> & { id?: string };
 type CouponInput = Omit<Coupon, 'id' | 'usageCount'> & { id?: string };
 
 interface LuminaryContextType {
   formatPrice: (amountInINR: number) => string;
   products: Product[];
+  adminProducts: Product[];
   cart: CartItem[];
   wishlist: string[];
   orders: Order[];
   coupons: Coupon[];
   heroBanners: HeroBanner[];
+  adminBanners: HeroBanner[];
   bulkEnquiries: BulkEnquiry[];
   activityLogs: ActivityLog[];
   sheetSyncLogs: GoogleSheetSyncLog[];
@@ -56,40 +99,53 @@ interface LuminaryContextType {
   activeCoupon: Coupon | null;
   activeCategoryFilter: CategoryType | 'all';
   setActiveCategoryFilter: (cat: CategoryType | 'all') => void;
+  paymentOptions: { online: boolean; cod: boolean };
+
+  // Feedback
+  toast: { id: number; message: string; type: ToastType } | null;
+  showToast: (message: string, type?: ToastType) => void;
+  dismissToast: () => void;
 
   // Cart & Wishlist
-  addToCart: (product: Product, quantity?: number, selectedVariantId?: string) => Promise<void>;
+  addToCart: (product: Product, quantity?: number, selectedVariantId?: string) => Promise<boolean>;
   removeFromCart: (productId: string) => Promise<void>;
   updateCartQuantity: (productId: string, quantity: number) => Promise<void>;
   clearCart: () => Promise<void>;
+  refreshCart: () => Promise<void>;
   toggleWishlist: (productId: string) => Promise<void>;
   applyCoupon: (code: string) => Promise<{ success: boolean; message: string }>;
   removeCoupon: () => Promise<void>;
   getCartTotals: () => CartTotals;
   getUnitPriceForProduct: (product: Product, quantity: number) => number;
 
-  // Reviews & Quiz
+  // Reviews
   addReview: (review: Omit<ReviewItem, 'id' | 'date' | 'verified'>) => Promise<void>;
-  checkPincodeDelivery: (pincode: string) => { available: boolean; estimatedDays: string; courier: string; cod: boolean };
 
   // Checkout & Orders
-  placeOrder: (customerData: {
-    customerName: string;
-    phone: string;
-    email: string;
-    shippingAddress: string;
-    city: string;
-    state: string;
-    pincode: string;
-    paymentMethod: 'Razorpay' | 'Cashfree' | 'UPI' | 'Credit Card' | 'COD';
+  placeOrder: (details: CheckoutDetails) => Promise<PlaceOrderResult>;
+  verifyPayment: (payload: {
+    orderId: string;
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
   }) => Promise<Order>;
+  cancelPayment: (orderId: string, accessToken: string) => Promise<void>;
   submitBulkEnquiry: (data: Omit<BulkEnquiry, 'id' | 'status' | 'createdAt'>) => Promise<void>;
+
+  // Customer account
+  customer: CustomerProfile | null;
+  customerOrders: Order[];
+  customerLogin: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  customerRegister: (data: { name: string; email: string; phone: string; password: string }) => Promise<{ success: boolean; message?: string }>;
+  customerLogout: () => Promise<void>;
+  refreshCustomer: () => Promise<void>;
 
   // Admin auth
   adminSession: AdminSession | null;
   adminAuthChecked: boolean;
   adminLogin: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
   adminLogout: () => Promise<void>;
+  changeAdminPassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean; message?: string }>;
   refreshAdminData: () => Promise<void>;
 
   // Admin Actions
@@ -107,17 +163,6 @@ interface LuminaryContextType {
 
 const LuminaryContext = createContext<LuminaryContextType | undefined>(undefined);
 
-const DEFAULT_SETTINGS: SiteSettings = {
-  websiteName: 'LUMINARY',
-  logoText: 'LUMINARY',
-  contactPhone: '',
-  contactEmail: '',
-  address: '',
-  whatsAppNumber: '',
-  freeShippingThreshold: 999,
-  defaultShippingCharge: 99,
-  lowStockAlertThreshold: 10,
-};
 
 async function apiRequest<T>(url: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(url, {
@@ -136,27 +181,46 @@ async function apiRequest<T>(url: string, options: RequestInit = {}): Promise<T>
   return res.json();
 }
 
+const errorText = (err: unknown, fallback: string) => (err instanceof Error ? err.message : fallback);
+
 interface CartApiPayload {
   items: CartItem[];
   appliedCoupon: Coupon | null;
 }
 
-export const LuminaryProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [products, setProducts] = useState<Product[]>([]);
+export const LuminaryProvider: React.FC<{ children: React.ReactNode; initialData?: InitialStoreData }> = ({
+  children,
+  initialData,
+}) => {
+  const [products, setProducts] = useState<Product[]>(initialData?.products ?? []);
+  const [adminProducts, setAdminProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [wishlist, setWishlist] = useState<string[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
-  const [heroBanners, setHeroBanners] = useState<HeroBanner[]>([]);
+  const [heroBanners, setHeroBanners] = useState<HeroBanner[]>(initialData?.heroBanners ?? []);
+  const [adminBanners, setAdminBanners] = useState<HeroBanner[]>([]);
   const [bulkEnquiries, setBulkEnquiries] = useState<BulkEnquiry[]>([]);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [sheetSyncLogs, setSheetSyncLogs] = useState<GoogleSheetSyncLog[]>([]);
-  const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SETTINGS);
+  const [settings, setSettings] = useState<SiteSettings>(initialData?.settings ?? DEFAULT_SETTINGS);
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [activeCoupon, setActiveCoupon] = useState<Coupon | null>(null);
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<CategoryType | 'all'>('all');
+  const [paymentOptions, setPaymentOptions] = useState({ online: false, cod: true });
   const [adminSession, setAdminSession] = useState<AdminSession | null>(null);
   const [adminAuthChecked, setAdminAuthChecked] = useState(false);
+  const [customer, setCustomer] = useState<CustomerProfile | null>(null);
+  const [customerOrders, setCustomerOrders] = useState<Order[]>([]);
+  const [toast, setToast] = useState<{ id: number; message: string; type: ToastType } | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const dismissToast = useCallback(() => setToast(null), []);
+  const showToast = useCallback((message: string, type: ToastType = 'info') => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast({ id: Date.now(), message, type });
+    toastTimer.current = setTimeout(() => setToast(null), 4500);
+  }, []);
 
   // The storefront is light-only and INR-only; clear any dark class saved by older versions.
   useEffect(() => {
@@ -165,54 +229,80 @@ export const LuminaryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const formatPrice = (amountInINR: number): string => `₹${Math.round(amountInINR).toLocaleString('en-IN')}`;
 
-  // Initial data load from the backend
+  const refreshCustomer = useCallback(async () => {
+    try {
+      const data = await apiRequest<{ customer: CustomerProfile; orders: Order[] }>('/api/customer/me');
+      setCustomer(data.customer);
+      setCustomerOrders(data.orders);
+    } catch {
+      setCustomer(null);
+      setCustomerOrders([]);
+    }
+  }, []);
+
+  const refreshCart = useCallback(async () => {
+    try {
+      const data = await apiRequest<CartApiPayload>('/api/cart');
+      setCart(data.items || []);
+      setActiveCoupon(data.appliedCoupon || null);
+    } catch {
+      /* keep what we have */
+    }
+  }, []);
+
+  // Initial data load from the backend (server-rendered data is already in state; this refreshes it).
   useEffect(() => {
     apiRequest<Product[]>('/api/products').then(setProducts).catch(() => {});
     apiRequest<HeroBanner[]>('/api/hero-banners').then(setHeroBanners).catch(() => {});
     apiRequest<SiteSettings>('/api/settings').then((s) => s && setSettings(s)).catch(() => {});
-    apiRequest<CartApiPayload>('/api/cart').then((data) => {
-      setCart(data.items || []);
-      setActiveCoupon(data.appliedCoupon || null);
-    }).catch(() => {});
+    apiRequest<{ online: boolean; cod: boolean }>('/api/payments/config').then(setPaymentOptions).catch(() => {});
+    refreshCart();
     apiRequest<{ productIds: string[] }>('/api/wishlist').then((data) => setWishlist(data.productIds || [])).catch(() => {});
+    refreshCustomer();
     apiRequest<AdminSession>('/api/auth/me')
       .then(setAdminSession)
       .catch(() => setAdminSession(null))
       .finally(() => setAdminAuthChecked(true));
-  }, []);
+  }, [refreshCart, refreshCustomer]);
 
-  // Bulk Tier Price Calculator
-  const getUnitPriceForProduct = (product: Product, quantity: number): number => {
-    if (!product.isBulkAvailable || !product.bulkSlabs || product.bulkSlabs.length === 0) {
-      return product.sellingPrice;
+  const getUnitPriceForProduct = (product: Product, quantity: number): number => unitPriceFor(product, quantity);
+
+  const addToCart = async (product: Product, quantity: number = 1, selectedVariantId?: string): Promise<boolean> => {
+    try {
+      const data = await apiRequest<CartApiPayload>('/api/cart', {
+        method: 'POST',
+        body: JSON.stringify({ productId: product.id, quantity, selectedVariantId }),
+      });
+      setCart(data.items || []);
+      setActiveCoupon(data.appliedCoupon || null);
+      return true;
+    } catch (err) {
+      showToast(errorText(err, 'Could not add this item to your cart.'), 'error');
+      return false;
     }
-    const sortedSlabs = [...product.bulkSlabs].sort((a, b) => b.minQty - a.minQty);
-    const applicableSlab = sortedSlabs.find((slab) => quantity >= slab.minQty);
-    return applicableSlab ? applicableSlab.pricePerUnit : product.sellingPrice;
-  };
-
-  const addToCart = async (product: Product, quantity: number = 1, selectedVariantId?: string) => {
-    const data = await apiRequest<CartApiPayload>('/api/cart', {
-      method: 'POST',
-      body: JSON.stringify({ productId: product.id, quantity, selectedVariantId }),
-    });
-    setCart(data.items || []);
-    setActiveCoupon(data.appliedCoupon || null);
   };
 
   const removeFromCart = async (productId: string) => {
-    const data = await apiRequest<CartApiPayload>(`/api/cart/${productId}`, { method: 'DELETE' });
-    setCart(data.items || []);
-    setActiveCoupon(data.appliedCoupon || null);
+    try {
+      const data = await apiRequest<CartApiPayload>(`/api/cart/${productId}`, { method: 'DELETE' });
+      setCart(data.items || []);
+      setActiveCoupon(data.appliedCoupon || null);
+    } catch (err) {
+      showToast(errorText(err, 'Could not remove this item.'), 'error');
+    }
   };
 
   const updateCartQuantity = async (productId: string, quantity: number) => {
-    const data = await apiRequest<CartApiPayload>('/api/cart', {
-      method: 'PATCH',
-      body: JSON.stringify({ productId, quantity }),
-    });
-    setCart(data.items || []);
-    setActiveCoupon(data.appliedCoupon || null);
+    try {
+      const data = await apiRequest<CartApiPayload>('/api/cart', {
+        method: 'PATCH',
+        body: JSON.stringify({ productId, quantity }),
+      });
+      setCart(data.items || []);
+      setActiveCoupon(data.appliedCoupon || null);
+    } catch (err) {
+      showToast(errorText(err, 'Could not update the quantity.'), 'error');
+    }
   };
 
   const clearCart = async () => {
@@ -222,78 +312,71 @@ export const LuminaryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const toggleWishlist = async (productId: string) => {
-    const data = await apiRequest<{ productIds: string[] }>('/api/wishlist', {
-      method: 'POST',
-      body: JSON.stringify({ productId }),
-    });
-    setWishlist(data.productIds || []);
+    try {
+      const data = await apiRequest<{ productIds: string[] }>('/api/wishlist', {
+        method: 'POST',
+        body: JSON.stringify({ productId }),
+      });
+      setWishlist(data.productIds || []);
+    } catch (err) {
+      showToast(errorText(err, 'Could not update your wishlist.'), 'error');
+    }
   };
 
   const applyCoupon = async (code: string): Promise<{ success: boolean; message: string }> => {
-    const data = await apiRequest<{ success: boolean; message: string; items?: CartItem[]; appliedCoupon?: Coupon | null }>(
-      '/api/coupons/apply',
-      { method: 'POST', body: JSON.stringify({ code }) }
-    );
-    if (data.success) {
-      setCart(data.items || []);
-      setActiveCoupon(data.appliedCoupon || null);
+    try {
+      const data = await apiRequest<{ success: boolean; message: string; items?: CartItem[]; appliedCoupon?: Coupon | null }>(
+        '/api/coupons/apply',
+        { method: 'POST', body: JSON.stringify({ code }) }
+      );
+      if (data.success) {
+        setCart(data.items || []);
+        setActiveCoupon(data.appliedCoupon || null);
+      }
+      return { success: data.success, message: data.message };
+    } catch (err) {
+      return { success: false, message: errorText(err, 'Could not apply this coupon.') };
     }
-    return { success: data.success, message: data.message };
   };
 
   const removeCoupon = async () => {
-    const data = await apiRequest<CartApiPayload>('/api/coupons/apply', { method: 'DELETE' });
-    setCart(data.items || []);
-    setActiveCoupon(data.appliedCoupon || null);
+    try {
+      const data = await apiRequest<CartApiPayload>('/api/coupons/apply', { method: 'DELETE' });
+      setCart(data.items || []);
+      setActiveCoupon(data.appliedCoupon || null);
+    } catch (err) {
+      showToast(errorText(err, 'Could not remove the coupon.'), 'error');
+    }
   };
 
+  // Display-only: the server recomputes every figure at checkout, using the same shared formula.
   const getCartTotals = (): CartTotals => {
-    let subtotal = 0;
-    let itemCount = 0;
-    let mrpTotal = 0;
-
-    cart.forEach((item) => {
-      subtotal += item.totalPrice;
-      itemCount += item.quantity;
-      mrpTotal += item.product.mrp * item.quantity;
+    const totals = computeCartTotals({
+      lines: cart.map((item) => ({
+        productId: item.product.id,
+        category: item.product.category,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        totalPrice: item.totalPrice,
+        mrp: item.product.mrp,
+        gstRate: item.product.gstRate,
+      })),
+      coupon: activeCoupon,
+      freeShippingThreshold: settings.freeShippingThreshold,
+      defaultShippingCharge: settings.defaultShippingCharge,
     });
-
-    let couponDiscount = 0;
-    if (activeCoupon && subtotal >= activeCoupon.minOrderValue) {
-      if (activeCoupon.type === 'percentage') {
-        couponDiscount = (subtotal * activeCoupon.value) / 100;
-        if (activeCoupon.maxDiscount && couponDiscount > activeCoupon.maxDiscount) {
-          couponDiscount = activeCoupon.maxDiscount;
-        }
-      } else {
-        couponDiscount = activeCoupon.value;
-      }
-    }
-
-    const discountedSubtotal = Math.max(0, subtotal - couponDiscount);
-    const savings = Math.max(0, mrpTotal - discountedSubtotal);
-
-    const shippingFee = discountedSubtotal >= settings.freeShippingThreshold || cart.length === 0 ? 0 : settings.defaultShippingCharge;
-
-    const taxableAmount = Math.round((discountedSubtotal / 1.18) * 100) / 100;
-    const gstAmount = Math.round((discountedSubtotal - taxableAmount) * 100) / 100;
-    const cgst = Math.round((gstAmount / 2) * 100) / 100;
-    const sgst = cgst;
-
-    const grandTotal = Math.round((discountedSubtotal + shippingFee) * 100) / 100;
-
     return {
-      subtotal,
-      savings,
+      subtotal: totals.subtotal,
+      savings: totals.savings,
       appliedCoupon: activeCoupon,
-      couponDiscount,
-      taxableAmount,
-      gstAmount,
-      cgst,
-      sgst,
-      shippingFee,
-      grandTotal,
-      itemCount,
+      couponDiscount: totals.couponDiscount,
+      taxableAmount: totals.taxableAmount,
+      gstAmount: totals.gstAmount,
+      cgst: totals.cgst,
+      sgst: totals.sgst,
+      shippingFee: totals.shippingFee,
+      grandTotal: totals.grandTotal,
+      itemCount: totals.itemCount,
     };
   };
 
@@ -315,39 +398,36 @@ export const LuminaryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     );
   };
 
-  const checkPincodeDelivery = (pincode: string) => {
-    const clean = pincode.trim();
-    if (!/^\d{6}$/.test(clean)) {
-      return { available: false, estimatedDays: 'N/A', courier: 'N/A', cod: false };
-    }
-    const isMetro = ['11', '40', '56', '70', '60'].some((prefix) => clean.startsWith(prefix));
-    return {
-      available: true,
-      estimatedDays: isMetro ? '2-3 Business Days' : '4-5 Business Days',
-      courier: isMetro ? 'BlueDart Air Express' : 'Delhivery Surface',
-      cod: true,
-    };
-  };
+  const refreshProducts = () => apiRequest<Product[]>('/api/products').then(setProducts).catch(() => {});
 
-  const placeOrder = async (customerData: {
-    customerName: string;
-    phone: string;
-    email: string;
-    shippingAddress: string;
-    city: string;
-    state: string;
-    pincode: string;
-    paymentMethod: 'Razorpay' | 'Cashfree' | 'UPI' | 'Credit Card' | 'COD';
-  }): Promise<Order> => {
-    const order = await apiRequest<Order>('/api/orders', {
+  const placeOrder = async (details: CheckoutDetails): Promise<PlaceOrderResult> => {
+    const result = await apiRequest<PlaceOrderResult>('/api/orders', {
       method: 'POST',
-      body: JSON.stringify(customerData),
+      body: JSON.stringify(details),
     });
+    // The server emptied the cart when it created the order.
     setCart([]);
     setActiveCoupon(null);
-    // Stock levels changed server-side; refresh the catalog so it reflects the new totals.
-    apiRequest<Product[]>('/api/products').then(setProducts).catch(() => {});
-    return order;
+    refreshProducts();
+    if (customer) refreshCustomer();
+    return result;
+  };
+
+  const verifyPayment = async (payload: {
+    orderId: string;
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+  }): Promise<Order> => {
+    const data = await apiRequest<{ order: Order }>('/api/payments/verify', { method: 'POST', body: JSON.stringify(payload) });
+    if (customer) refreshCustomer();
+    return data.order;
+  };
+
+  const cancelPayment = async (orderId: string, accessToken: string) => {
+    await apiRequest('/api/payments/cancel', { method: 'POST', body: JSON.stringify({ orderId, accessToken }) }).catch(() => {});
+    await refreshCart();
+    refreshProducts();
   };
 
   const submitBulkEnquiry = async (data: Omit<BulkEnquiry, 'id' | 'status' | 'createdAt'>) => {
@@ -356,6 +436,32 @@ export const LuminaryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       body: JSON.stringify(data),
     });
     setBulkEnquiries((prev) => [enquiry, ...prev]);
+  };
+
+  const customerLogin = async (email: string, password: string) => {
+    try {
+      await apiRequest('/api/customer/login', { method: 'POST', body: JSON.stringify({ email, password }) });
+      await refreshCustomer();
+      return { success: true };
+    } catch (err) {
+      return { success: false, message: errorText(err, 'Login failed') };
+    }
+  };
+
+  const customerRegister = async (data: { name: string; email: string; phone: string; password: string }) => {
+    try {
+      await apiRequest('/api/customer/register', { method: 'POST', body: JSON.stringify(data) });
+      await refreshCustomer();
+      return { success: true };
+    } catch (err) {
+      return { success: false, message: errorText(err, 'Could not create your account') };
+    }
+  };
+
+  const customerLogout = async () => {
+    await apiRequest('/api/customer/logout', { method: 'POST' }).catch(() => {});
+    setCustomer(null);
+    setCustomerOrders([]);
   };
 
   const adminLogin = async (email: string, password: string): Promise<{ success: boolean; message?: string }> => {
@@ -367,7 +473,7 @@ export const LuminaryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setAdminSession(session);
       return { success: true };
     } catch (err) {
-      return { success: false, message: err instanceof Error ? err.message : 'Login failed' };
+      return { success: false, message: errorText(err, 'Login failed') };
     }
   };
 
@@ -379,47 +485,65 @@ export const LuminaryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setActivityLogs([]);
     setSheetSyncLogs([]);
     setCoupons([]);
+    setAdminProducts([]);
+    setAdminBanners([]);
+  };
+
+  const changeAdminPassword = async (currentPassword: string, newPassword: string) => {
+    try {
+      await apiRequest('/api/auth/change-password', { method: 'POST', body: JSON.stringify({ currentPassword, newPassword }) });
+      return { success: true };
+    } catch (err) {
+      return { success: false, message: errorText(err, 'Could not change the password') };
+    }
   };
 
   const refreshAdminData = useCallback(async () => {
-    const [ordersData, enquiriesData, activityData, sheetData, couponsData] = await Promise.all([
+    const [ordersData, enquiriesData, activityData, sheetData, couponsData, productsData, bannersData] = await Promise.all([
       apiRequest<Order[]>('/api/orders').catch(() => []),
       apiRequest<BulkEnquiry[]>('/api/bulk-enquiries').catch(() => []),
       apiRequest<ActivityLog[]>('/api/activity-logs').catch(() => []),
       apiRequest<GoogleSheetSyncLog[]>('/api/sheet-sync-logs').catch(() => []),
       apiRequest<Coupon[]>('/api/coupons').catch(() => []),
+      apiRequest<Product[]>('/api/products?includeInactive=true').catch(() => []),
+      apiRequest<HeroBanner[]>('/api/hero-banners').catch(() => []),
     ]);
     setOrders(ordersData);
     setBulkEnquiries(enquiriesData);
     setActivityLogs(activityData);
     setSheetSyncLogs(sheetData);
     setCoupons(couponsData);
+    setAdminProducts(productsData);
+    setAdminBanners(bannersData);
   }, []);
+
+  const upsertById = <T extends { id: string }>(list: T[], item: T) =>
+    list.some((x) => x.id === item.id) ? list.map((x) => (x.id === item.id ? item : x)) : [item, ...list];
 
   const saveProduct = async (product: ProductInput) => {
     const { id, ...rest } = product;
     const saved = id
       ? await apiRequest<Product>(`/api/products/${id}`, { method: 'PUT', body: JSON.stringify(rest) })
       : await apiRequest<Product>('/api/products', { method: 'POST', body: JSON.stringify(rest) });
-    setProducts((prev) => {
-      const exists = prev.some((p) => p.id === saved.id);
-      return exists ? prev.map((p) => (p.id === saved.id ? saved : p)) : [saved, ...prev];
-    });
+    setAdminProducts((prev) => upsertById(prev, saved));
+    setProducts((prev) => (saved.status === 'active' ? upsertById(prev, saved) : prev.filter((p) => p.id !== saved.id)));
   };
 
   const deleteProduct = async (productId: string) => {
     await apiRequest(`/api/products/${productId}`, { method: 'DELETE' });
     setProducts((prev) => prev.filter((p) => p.id !== productId));
+    setAdminProducts((prev) => prev.filter((p) => p.id !== productId));
   };
 
   const updateHeroBanners = async (banners: HeroBanner[]) => {
     const saved = await apiRequest<HeroBanner[]>('/api/hero-banners', { method: 'PUT', body: JSON.stringify(banners) });
-    setHeroBanners(saved);
+    setAdminBanners(saved);
+    setHeroBanners(saved.filter((b) => b.isActive));
   };
 
   const reorderPriorityProducts = async (priorityProductIds: string[]) => {
     await Promise.all(
-      products.map((prod) => {
+      adminProducts.map((prod) => {
         const index = priorityProductIds.indexOf(prod.id);
         const isHomepagePriority = index > -1;
         const priorityOrder = isHomepagePriority ? index + 1 : prod.priorityOrder;
@@ -430,8 +554,12 @@ export const LuminaryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         });
       })
     );
-    const refreshed = await apiRequest<Product[]>('/api/products');
+    const [refreshed, adminRefreshed] = await Promise.all([
+      apiRequest<Product[]>('/api/products'),
+      apiRequest<Product[]>('/api/products?includeInactive=true'),
+    ]);
     setProducts(refreshed);
+    setAdminProducts(adminRefreshed);
   };
 
   const updateOrderStatus = async (orderId: string, status: OrderStatus, courier?: string, trackingNumber?: string) => {
@@ -440,6 +568,8 @@ export const LuminaryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       body: JSON.stringify({ orderStatus: status, courier, trackingNumber }),
     });
     setOrders((prev) => prev.map((o) => (o.id === orderId ? updated : o)));
+    // Cancelling returns stock, so pull fresh product numbers too.
+    apiRequest<Product[]>('/api/products?includeInactive=true').then(setAdminProducts).catch(() => {});
   };
 
   const updateEnquiryStatus = async (enquiryId: string, status: BulkEnquiryStatus) => {
@@ -455,10 +585,7 @@ export const LuminaryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const saved = id
       ? await apiRequest<Coupon>(`/api/coupons/${id}`, { method: 'PUT', body: JSON.stringify(rest) })
       : await apiRequest<Coupon>('/api/coupons', { method: 'POST', body: JSON.stringify(rest) });
-    setCoupons((prev) => {
-      const exists = prev.some((c) => c.id === saved.id);
-      return exists ? prev.map((c) => (c.id === saved.id ? saved : c)) : [saved, ...prev];
-    });
+    setCoupons((prev) => upsertById(prev, saved));
   };
 
   const toggleCouponStatus = async (couponId: string) => {
@@ -477,6 +604,7 @@ export const LuminaryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       body: JSON.stringify({ productId, qtyChange, reason }),
     });
     setProducts((prev) => prev.map((p) => (p.id === productId ? updated : p)));
+    setAdminProducts((prev) => prev.map((p) => (p.id === productId ? updated : p)));
   };
 
   return (
@@ -484,11 +612,13 @@ export const LuminaryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       value={{
         formatPrice,
         products,
+        adminProducts,
         cart,
         wishlist,
         orders,
         coupons,
         heroBanners,
+        adminBanners,
         bulkEnquiries,
         activityLogs,
         sheetSyncLogs,
@@ -497,23 +627,36 @@ export const LuminaryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         activeCoupon,
         activeCategoryFilter,
         setActiveCategoryFilter,
+        paymentOptions,
+        toast,
+        showToast,
+        dismissToast,
         addToCart,
         removeFromCart,
         updateCartQuantity,
         clearCart,
+        refreshCart,
         toggleWishlist,
         applyCoupon,
         removeCoupon,
         getCartTotals,
         getUnitPriceForProduct,
         addReview,
-        checkPincodeDelivery,
         placeOrder,
+        verifyPayment,
+        cancelPayment,
         submitBulkEnquiry,
+        customer,
+        customerOrders,
+        customerLogin,
+        customerRegister,
+        customerLogout,
+        refreshCustomer,
         adminSession,
         adminAuthChecked,
         adminLogin,
         adminLogout,
+        changeAdminPassword,
         refreshAdminData,
         saveProduct,
         deleteProduct,

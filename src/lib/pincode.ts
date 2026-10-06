@@ -15,7 +15,7 @@ export async function lookupPincode(code: string): Promise<PincodeInfo> {
 
   try {
     const res = await fetch(`https://api.postalpincode.in/pincode/${code}`, {
-      signal: AbortSignal.timeout(4000),
+      signal: AbortSignal.timeout(7000),
       next: { revalidate: 60 * 60 * 24 * 30 },
     });
     if (!res.ok) return { valid: true, unverified: true };

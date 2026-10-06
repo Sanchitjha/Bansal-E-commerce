@@ -9,7 +9,7 @@ interface HeaderProps {
   onOpenCart: () => void;
   onOpenBulkModal: () => void;
   onOpenTrackOrder: () => void;
-  onOpenAdmin: () => void;
+  onOpenAccount: () => void;
   onOpenSearch: () => void;
   onOpenQuiz: () => void;
   onOpenReviewModal: () => void;
@@ -23,7 +23,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenCart,
   onOpenBulkModal,
   onOpenTrackOrder,
-  onOpenAdmin,
+  onOpenAccount,
   onOpenSearch,
   onOpenQuiz,
   onOpenReviewModal,
@@ -158,10 +158,10 @@ export const Header: React.FC<HeaderProps> = ({
             <Search className="w-[18px] h-[18px]" />
           </button>
           <button
-            onClick={onOpenAdmin}
+            onClick={onOpenAccount}
             className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-stone-200 flex items-center justify-center text-slate-700 hover:border-brand-green-600 hover:text-brand-green-700 transition"
-            title="Admin sign in"
-            aria-label="Admin sign in"
+            title="My account"
+            aria-label="My account"
           >
             <User className="w-[18px] h-[18px]" />
           </button>

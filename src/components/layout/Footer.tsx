@@ -4,6 +4,7 @@ import React from 'react';
 import { Phone, Mail, MapPin, MessageCircle } from 'lucide-react';
 import { useLuminary } from '@/context/LuminaryContext';
 import { CategoryType } from '@/types';
+import { POLICY_LINKS } from '@/lib/policies';
 
 interface FooterProps {
   onOpenAdmin: () => void;
@@ -29,7 +30,6 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAdmin, onOpenBulkModal, on
 
   const heading = 'text-sm font-bold text-slate-900 mb-4';
   const link = 'block text-left text-sm text-slate-600 hover:text-brand-green-700 transition py-1';
-  const plain = 'block text-sm text-slate-500 py-1';
 
   return (
     <footer className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 pb-8">
@@ -53,10 +53,11 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAdmin, onOpenBulkModal, on
 
           <div>
             <h4 className={heading}>Policies</h4>
-            <span className={plain}>Terms & Conditions</span>
-            <span className={plain}>Privacy Policy</span>
-            <span className={plain}>Shipping Policy</span>
-            <span className={plain}>Return Policy</span>
+            {POLICY_LINKS.map((l) => (
+              <a key={l.slug} href={`/policies/${l.slug}`} className={link}>
+                {l.label}
+              </a>
+            ))}
           </div>
 
           <div className="col-span-2 md:col-span-1 lg:col-span-2">

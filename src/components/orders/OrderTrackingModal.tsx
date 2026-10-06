@@ -13,22 +13,31 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({ isOpen, 
   if (!isOpen) return null;
 
   const [searchId, setSearchId] = useState('');
+  const [searchPhone, setSearchPhone] = useState('');
   const [searchedOrder, setSearchedOrder] = useState<Order | null>(null);
   const [searched, setSearched] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [lookupError, setLookupError] = useState<string | null>(null);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     const id = searchId.trim();
-    if (!id) return;
+    if (!id || !searchPhone.trim()) return;
 
     setIsSearching(true);
+    setLookupError(null);
     try {
-      const res = await fetch(`/api/orders/track?id=${encodeURIComponent(id)}`);
+      const res = await fetch(`/api/orders/track?id=${encodeURIComponent(id)}&phone=${encodeURIComponent(searchPhone.trim())}`);
       const data = await res.json();
-      setSearchedOrder(data.order || null);
+      if (!res.ok) {
+        setSearchedOrder(null);
+        setLookupError(data.error || 'Could not look up this order.');
+      } else {
+        setSearchedOrder(data.order || null);
+      }
     } catch {
       setSearchedOrder(null);
+      setLookupError('Could not reach the server. Please try again.');
     } finally {
       setSearched(true);
       setIsSearching(false);
@@ -59,7 +68,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({ isOpen, 
             </div>
             <div>
               <h3 className=" text-lg font-bold text-slate-900">Live Order Tracking</h3>
-              <p className="text-xs text-slate-500">Track shipment status with Order ID or Registered Mobile</p>
+              <p className="text-xs text-slate-500">Enter your Order ID and the mobile number used at checkout</p>
             </div>
           </div>
           <button
@@ -72,13 +81,23 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({ isOpen, 
 
         <div className="p-6 space-y-6">
           {/* Search Box */}
-          <form onSubmit={handleSearch} className="flex gap-2">
+          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2">
             <input
               type="text"
-              placeholder="Enter your Order ID (e.g. LF-20260928-000001)"
+              required
+              placeholder="Order ID (e.g. LF-20261007-123456)"
               value={searchId}
               onChange={(e) => setSearchId(e.target.value)}
               className="flex-1 px-4 py-2.5 text-xs bg-stone-50 border border-stone-200 focus:border-brand-green-600 rounded-xl text-slate-900 placeholder-slate-500 outline-none font-mono"
+            />
+            <input
+              type="tel"
+              required
+              inputMode="numeric"
+              placeholder="Mobile number used for the order"
+              value={searchPhone}
+              onChange={(e) => setSearchPhone(e.target.value)}
+              className="flex-1 px-4 py-2.5 text-xs bg-stone-50 border border-stone-200 focus:border-brand-green-600 rounded-xl text-slate-900 placeholder-slate-500 outline-none"
             />
             <button
               type="submit"
@@ -167,14 +186,24 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({ isOpen, 
                   </span>
                   <p className="text-slate-500">{searchedOrder.shippingAddress}, {searchedOrder.city}, {searchedOrder.state} - {searchedOrder.pincode}</p>
                   <p className="text-slate-500">Payment: <strong className="text-slate-800">{searchedOrder.paymentMethod}</strong> ({searchedOrder.paymentStatus})</p>
+                  {searchedOrder.accessToken && (
+                    <a
+                      href={`/invoice/${encodeURIComponent(searchedOrder.id)}?t=${searchedOrder.accessToken}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 font-semibold text-brand-green-700 hover:underline"
+                    >
+                      <FileText className="w-3.5 h-3.5" /> View invoice
+                    </a>
+                  )}
                 </div>
               </div>
             </div>
           ) : searched ? (
             <div className="p-8 text-center text-slate-500 space-y-2 border-t border-stone-200">
               <AlertCircle className="w-8 h-8 text-rose-600 mx-auto" />
-              <p className="font-semibold text-slate-800">No order found with reference '{searchId}'</p>
-              <p className="text-xs">Please verify your order confirmation ID or contact Concierge.</p>
+              <p className="font-semibold text-slate-800">{lookupError ?? `No order found for '${searchId}' with that mobile number`}</p>
+              {!lookupError && <p className="text-xs">Please check your order ID and the mobile number you used at checkout.</p>}
             </div>
           ) : null}
         </div>

@@ -25,11 +25,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView, 
   const outOfStock = product.stock <= 0;
   const bulkSlab = product.isBulkAvailable && product.bulkSlabs && product.bulkSlabs.length > 1 ? product.bulkSlabs[1] : null;
 
-  const handleAdd = (e: React.MouseEvent) => {
+  const handleAdd = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    addToCart(product, 1).catch(() => {});
-    setAdded(true);
-    setTimeout(() => setAdded(false), 1800);
+    const ok = await addToCart(product, 1);
+    if (ok) {
+      setAdded(true);
+      setTimeout(() => setAdded(false), 1800);
+    }
   };
 
   return (
@@ -59,7 +61,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView, 
         <button
           onClick={(e) => {
             e.stopPropagation();
-            toggleWishlist(product.id).catch(() => {});
+            toggleWishlist(product.id);
           }}
           className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition ${
             isWishlisted ? 'bg-rose-500 text-white' : 'bg-white/90 text-slate-600 hover:text-rose-500'
@@ -80,7 +82,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView, 
         <span className="text-[11px] font-bold uppercase tracking-wider text-brand-green-600">
           {product.subcategory || CATEGORY_LABEL[product.category]}
         </span>
-        <h3 className="text-[15px] font-semibold text-slate-900 leading-snug line-clamp-2">{product.name}</h3>
+        <h3 className="text-[15px] font-semibold text-slate-900 leading-snug line-clamp-2">
+          <a
+            href={`/product/${product.urlSlug}`}
+            onClick={(e) => {
+              // Plain click opens the quick view; modified clicks keep normal link behaviour.
+              if (e.ctrlKey || e.metaKey || e.shiftKey) e.stopPropagation();
+              else e.preventDefault();
+            }}
+          >
+            {product.name}
+          </a>
+        </h3>
         <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">{product.shortDescription}</p>
 
         <div className="flex items-center gap-1 text-xs">
