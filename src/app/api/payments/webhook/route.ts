@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/models';
 import { serverError } from '@/lib/api-helpers';
 import { verifyWebhookSignature } from '@/lib/payments';
 import { markOrderPaid } from '@/lib/orders';
@@ -25,9 +25,10 @@ export async function POST(request: NextRequest) {
       const gatewayOrderId: string | undefined = payment?.order_id ?? event.payload?.order?.entity?.id;
       const paymentId: string | undefined = payment?.id;
       if (gatewayOrderId && paymentId) {
-        const order = await prisma.order.findFirst({ where: { gatewayOrderId } });
+        const { Order } = await db();
+        const order = await Order.findOne({ gatewayOrderId });
         if (order) {
-          const result = await markOrderPaid(order.id, paymentId);
+          const result = await markOrderPaid(order._id, paymentId);
           if (result && !result.alreadyPaid && !result.needsRefund) await sendOrderPlacedEmails(result.order);
         }
       }
