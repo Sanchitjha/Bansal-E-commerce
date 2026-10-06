@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import type { HydratedDocument } from 'mongoose';
+import { db, type IOrder } from '@/lib/models';
+import { isDuplicateKey, withTransaction } from '@/lib/db';
 import { revalidateCatalog } from '@/lib/data';
 import { attachCartCookie, getExistingCartSessionId } from '@/lib/cart-session';
 import { badRequest, requireAdmin, serverError, unauthorized } from '@/lib/api-helpers';
@@ -18,14 +20,15 @@ export async function GET(request: NextRequest) {
 
   try {
     await releaseExpiredPendingOrders().catch(() => {});
-    const orders = await prisma.order.findMany({ orderBy: { date: 'desc' } });
-    return NextResponse.json(orders);
+    const { Order } = await db();
+    return NextResponse.json(await Order.find().sort({ date: -1 }));
   } catch (err) {
     return serverError(err);
   }
 }
 
 const clean = (v: unknown, max: number) => String(v ?? '').trim().slice(0, max);
+const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 export async function POST(request: NextRequest) {
   try {
@@ -51,7 +54,8 @@ export async function POST(request: NextRequest) {
     }
     const paymentMethod = body.paymentMethod as 'COD' | 'Razorpay';
 
-    const settings = await prisma.siteSettings.findUnique({ where: { id: 'singleton' } });
+    const m = await db();
+    const settings = await m.SiteSettings.findById('singleton');
     if (isPincodeBlocked(pincode, settings?.blockedPincodes ?? '')) {
       return badRequest('Sorry, we do not deliver to this pincode yet.');
     }
@@ -80,12 +84,10 @@ export async function POST(request: NextRequest) {
     const coupon = totals.couponDiscount > 0 ? cart.appliedCoupon : null;
 
     if (coupon?.firstOrderOnly) {
-      const previous = await prisma.order.count({
-        where: {
-          orderStatus: { notIn: ['Cancelled'] },
-          paymentStatus: { not: 'Failed' },
-          OR: [{ email: { equals: email, mode: 'insensitive' } }, { phone }],
-        },
+      const previous = await m.Order.countDocuments({
+        orderStatus: { $ne: 'Cancelled' },
+        paymentStatus: { $ne: 'Failed' },
+        $or: [{ email: new RegExp(`^${escapeRegex(email)}$`, 'i') }, { phone }],
       });
       if (previous > 0) {
         return badRequest(`Coupon ${coupon.code} is valid on your first order only. Please remove it to continue.`);
@@ -96,7 +98,7 @@ export async function POST(request: NextRequest) {
     const isOnline = paymentMethod !== 'COD';
 
     const orderItems = cart.items.map((item, i) => ({
-      productId: item.product.id,
+      productId: item.product._id,
       productName: item.product.name,
       sku: item.product.sku,
       hsnCode: item.product.hsnCode,
@@ -110,18 +112,19 @@ export async function POST(request: NextRequest) {
       gstAmount: totals.lines[i].gstAmount,
     }));
 
-    let order = null;
-    for (let attempt = 0; attempt < 3 && !order; attempt++) {
+    let createdId: string | null = null;
+    for (let attempt = 0; attempt < 3 && !createdId; attempt++) {
       try {
-        order = await prisma.$transaction(async (tx) => {
+        createdId = await withTransaction(async (session) => {
           // Reserve stock atomically: the update only matches while enough units remain.
           for (const item of cart.items) {
-            const reserved = await tx.product.updateMany({
-              where: { id: item.product.id, status: 'active', stock: { gte: item.quantity } },
-              data: { stock: { decrement: item.quantity } },
-            });
-            if (reserved.count === 0) {
-              const current = await tx.product.findUnique({ where: { id: item.product.id }, select: { stock: true } });
+            const reserved = await m.Product.updateOne(
+              { _id: item.product._id, status: 'active', stock: { $gte: item.quantity } },
+              { $inc: { stock: -item.quantity } },
+              { session }
+            );
+            if (reserved.modifiedCount === 0) {
+              const current = await m.Product.findById(item.product._id).select('stock').session(session);
               const left = current?.stock ?? 0;
               throw new OrderError(
                 left > 0
@@ -132,64 +135,70 @@ export async function POST(request: NextRequest) {
             }
           }
 
-          const created = await tx.order.create({
-            data: {
-              id: newOrderId(),
-              date: new Date(),
-              customerName,
-              phone,
-              email,
-              shippingAddress,
-              city,
-              state,
-              pincode,
-              items: orderItems,
-              subtotal: totals.subtotal,
-              discount: totals.couponDiscount,
-              couponCode: coupon?.code ?? null,
-              taxableAmount: totals.taxableAmount,
-              gstAmount: totals.gstAmount,
-              cgst: totals.cgst,
-              sgst: totals.sgst,
-              igst: totals.igst,
-              shippingFee: totals.shippingFee,
-              totalAmount: totals.grandTotal,
-              paymentMethod,
-              paymentStatus: 'Pending',
-              orderStatus: isOnline ? 'Pending Payment' : 'Processing',
-              accessToken: newAccessToken(),
-              customerId: customer?.sub ?? null,
-            },
-          });
-
-          if (coupon) {
-            await tx.coupon.update({ where: { id: coupon.id }, data: { usageCount: { increment: 1 } } });
-          }
-          await tx.cartItem.deleteMany({ where: { sessionId } });
-          await tx.cartSession.update({ where: { id: sessionId }, data: { activeCouponCode: null } });
-          await tx.activityLog.create({
-            data: {
-              adminName: 'Storefront',
-              action: `Created Order ${created.id}`,
-              details: `Customer: ${customerName}, Total: ₹${totals.grandTotal}, ${paymentMethod}`,
-            },
-          });
-          await tx.sheetSyncLog.createMany({
-            data: [
-              { sheetName: 'SALES REGISTER', orderId: created.id, event: `Appended order ${created.id} customer ${customerName}` },
-              { sheetName: 'PRODUCT SALES', orderId: created.id, event: `Updated product sales units for order ${created.id}` },
-              { sheetName: 'MONTHLY SUMMARY', orderId: created.id, event: `Updated monthly revenue by +₹${totals.grandTotal}` },
+          const [created] = await m.Order.create(
+            [
+              {
+                _id: newOrderId(),
+                date: new Date(),
+                customerName,
+                phone,
+                email,
+                shippingAddress,
+                city,
+                state,
+                pincode,
+                items: orderItems,
+                subtotal: totals.subtotal,
+                discount: totals.couponDiscount,
+                couponCode: coupon?.code ?? null,
+                taxableAmount: totals.taxableAmount,
+                gstAmount: totals.gstAmount,
+                cgst: totals.cgst,
+                sgst: totals.sgst,
+                igst: totals.igst,
+                shippingFee: totals.shippingFee,
+                totalAmount: totals.grandTotal,
+                paymentMethod,
+                paymentStatus: 'Pending',
+                orderStatus: isOnline ? 'Pending Payment' : 'Processing',
+                accessToken: newAccessToken(),
+                customerId: customer?.sub ?? null,
+              },
             ],
-          });
-          return created;
+            { session }
+          );
+
+          if (coupon) await m.Coupon.updateOne({ _id: coupon._id }, { $inc: { usageCount: 1 } }, { session });
+          await m.CartSession.updateOne({ _id: sessionId }, { $set: { items: [], activeCouponCode: null } }, { session });
+          await m.ActivityLog.create(
+            [
+              {
+                adminName: 'Storefront',
+                action: `Created Order ${created._id}`,
+                details: `Customer: ${customerName}, Total: ₹${totals.grandTotal}, ${paymentMethod}`,
+              },
+            ],
+            { session }
+          );
+          await m.SheetSyncLog.insertMany(
+            [
+              { sheetName: 'SALES REGISTER', orderId: created._id, event: `Appended order ${created._id} customer ${customerName}` },
+              { sheetName: 'PRODUCT SALES', orderId: created._id, event: `Updated product sales units for order ${created._id}` },
+              { sheetName: 'MONTHLY SUMMARY', orderId: created._id, event: `Updated monthly revenue by +₹${totals.grandTotal}` },
+            ],
+            { session }
+          );
+          return created._id as string;
         });
       } catch (err) {
         // A random order-id collision is the only retryable failure.
-        if ((err as { code?: string })?.code === 'P2002' && attempt < 2) continue;
+        if (isDuplicateKey(err) && attempt < 2) continue;
         throw err;
       }
     }
-    if (!order) throw new Error('Could not allocate an order id');
+    if (!createdId) throw new Error('Could not allocate an order id');
+    // Re-read outside the transaction so the document is no longer tied to its (now closed) session.
+    const order: HydratedDocument<IOrder> = (await m.Order.findById(createdId))!;
     revalidateCatalog();
 
     if (!isOnline) {
@@ -202,10 +211,12 @@ export async function POST(request: NextRequest) {
     try {
       const gatewayOrder = await createRazorpayOrder({
         amountInRupees: order.totalAmount,
-        receipt: order.id,
-        notes: { orderId: order.id },
+        receipt: order._id,
+        notes: { orderId: order._id },
       });
-      order = await prisma.order.update({ where: { id: order.id }, data: { gatewayOrderId: gatewayOrder.id } });
+      order.gatewayOrderId = gatewayOrder.id;
+      await order.save();
+
       const response = NextResponse.json(
         {
           order,
@@ -223,7 +234,7 @@ export async function POST(request: NextRequest) {
       return response;
     } catch (err) {
       console.error(err);
-      await cancelPendingOrder(order.id, 'Could not start the payment gateway');
+      await cancelPendingOrder(order._id, 'Could not start the payment gateway');
       await restoreCartFromOrder(sessionId, order);
       return NextResponse.json({ error: 'We could not start the payment. Please try again or choose Cash on Delivery.' }, { status: 502 });
     }
