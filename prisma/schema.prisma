@@ -155,6 +155,38 @@ model Order {
   orderStatus     String
   courier         String?
   trackingNumber  String?
+
+  // Unguessable token that grants access to this order's invoice link.
+  accessToken     String?
+  // Razorpay order id (created at checkout) and payment id (set once paid).
+  gatewayOrderId  String?
+  paymentRef      String?
+
+  customerId      String?
+  customer        Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  @@index([customerId])
+  @@index([email])
+  @@index([phone])
+}
+
+model Customer {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  phone        String
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  orders Order[]
+}
+
+// Failed-login counters, stored in the DB because serverless instances share no memory.
+model LoginAttempt {
+  key         String    @id
+  failures    Int       @default(0)
+  windowStart DateTime  @default(now())
+  lockedUntil DateTime?
 }
 
 model BulkEnquiry {
@@ -215,4 +247,12 @@ model SiteSettings {
   freeShippingThreshold  Float
   defaultShippingCharge  Float
   lowStockAlertThreshold Int
+
+  // Seller details used on invoices and to decide CGST+SGST (same state) vs IGST (other state).
+  sellerState            String  @default("Maharashtra")
+  gstin                  String  @default("")
+  legalName              String  @default("")
+  // Delivery rules: COD on/off, and comma-separated pincodes we cannot deliver to.
+  codEnabled             Boolean @default(true)
+  blockedPincodes        String  @default("")
 }
