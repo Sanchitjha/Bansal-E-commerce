@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/models';
 import { getCustomerFromRequest } from '@/lib/customer-auth';
 import { badRequest, serverError, unauthorized } from '@/lib/api-helpers';
 import { normalizeIndianMobile } from '@/lib/india';
@@ -10,22 +10,22 @@ export async function GET(request: NextRequest) {
   if (!session) return unauthorized();
 
   try {
-    const customer = await prisma.customer.findUnique({ where: { id: session.sub } });
+    const { Customer, Order } = await db();
+    const customer = await Customer.findById(session.sub);
     if (!customer) return unauthorized();
 
-    let orders = await prisma.order.findMany({
-      where: { customerId: customer.id },
-      orderBy: { date: 'desc' },
-      take: 50,
-    });
+    const orders = await Order.find({ customerId: customer._id }).sort({ date: -1 }).limit(50);
 
     // Make sure every order has an invoice-link token.
-    orders = await Promise.all(
-      orders.map((o) => (o.accessToken ? o : prisma.order.update({ where: { id: o.id }, data: { accessToken: newAccessToken() } })))
-    );
+    for (const order of orders) {
+      if (!order.accessToken) {
+        order.accessToken = newAccessToken();
+        await order.save();
+      }
+    }
 
     return NextResponse.json({
-      customer: { id: customer.id, name: customer.name, email: customer.email, phone: customer.phone },
+      customer: { id: customer._id, name: customer.name, email: customer.email, phone: customer.phone },
       orders,
     });
   } catch (err) {
@@ -51,8 +51,10 @@ export async function PATCH(request: NextRequest) {
       data.phone = phone;
     }
 
-    const customer = await prisma.customer.update({ where: { id: session.sub }, data });
-    return NextResponse.json({ id: customer.id, name: customer.name, email: customer.email, phone: customer.phone });
+    const { Customer } = await db();
+    const customer = await Customer.findByIdAndUpdate(session.sub, { $set: data }, { new: true });
+    if (!customer) return unauthorized();
+    return NextResponse.json({ id: customer._id, name: customer.name, email: customer.email, phone: customer.phone });
   } catch (err) {
     return serverError(err);
   }
