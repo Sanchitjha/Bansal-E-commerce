@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/models';
 import { ADMIN_COOKIE_NAME, signAdminToken, verifyPassword } from '@/lib/auth';
 import { badRequest, serverError, unauthorized } from '@/lib/api-helpers';
 import { clearFailures, clientIp, lockSecondsRemaining, lockedMessage, recordFailure } from '@/lib/rate-limit';
@@ -19,7 +19,8 @@ export async function POST(request: NextRequest) {
     const locked = await lockSecondsRemaining(keys);
     if (locked > 0) return NextResponse.json({ error: lockedMessage(locked) }, { status: 429 });
 
-    const admin = await prisma.admin.findUnique({ where: { email: normalizedEmail } });
+    const { Admin } = await db();
+    const admin = await Admin.findOne({ email: normalizedEmail });
     const valid = await verifyPassword(String(password), admin?.passwordHash ?? DUMMY_HASH);
 
     if (!admin || !valid) {
@@ -28,9 +29,9 @@ export async function POST(request: NextRequest) {
     }
 
     await clearFailures(keys);
-    const token = signAdminToken({ sub: admin.id, email: admin.email, name: admin.name });
+    const token = signAdminToken({ sub: admin._id, email: admin.email, name: admin.name });
 
-    const response = NextResponse.json({ id: admin.id, email: admin.email, name: admin.name });
+    const response = NextResponse.json({ id: admin._id, email: admin.email, name: admin.name });
     response.cookies.set(ADMIN_COOKIE_NAME, token, {
       httpOnly: true,
       sameSite: 'lax',
