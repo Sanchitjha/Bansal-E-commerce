@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/models';
+import { withTransaction } from '@/lib/db';
+import { revalidateCatalog } from '@/lib/data';
 import { badRequest, notFound, requireAdmin, serverError, unauthorized } from '@/lib/api-helpers';
 import { ORDER_STATUSES, isOneOf } from '@/lib/validators';
 import { sendOrderStatusEmail } from '@/lib/order-notify';
@@ -13,7 +15,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   try {
     const { id } = await params;
-    const order = await prisma.order.findUnique({ where: { id } });
+    const { Order } = await db();
+    const order = await Order.findById(id);
     if (!order) return notFound('Order not found');
     return NextResponse.json(order);
   } catch (err) {
@@ -27,7 +30,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   try {
     const { id } = await params;
-    const existing = await prisma.order.findUnique({ where: { id } });
+    const m = await db();
+    const existing = await m.Order.findById(id);
     if (!existing) return notFound('Order not found');
 
     const body = await request.json();
@@ -37,6 +41,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     const newStatus: string = body.orderStatus ?? existing.orderStatus;
     const statusChanged = newStatus !== existing.orderStatus;
+    const courier = typeof body.courier === 'string' && body.courier.trim() ? body.courier.trim().slice(0, 80) : existing.courier;
+    const trackingNumber =
+      typeof body.trackingNumber === 'string' && body.trackingNumber.trim() ? body.trackingNumber.trim().slice(0, 80) : existing.trackingNumber;
 
     // COD money is collected on delivery; a refund status means the money went back.
     let paymentStatus = existing.paymentStatus;
@@ -46,39 +53,33 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const releasesStock =
       statusChanged && newStatus === 'Cancelled' && !STOCK_RELEASED.includes(existing.orderStatus) && existing.orderStatus !== 'Pending Payment';
 
-    const order = await prisma.$transaction(async (tx) => {
-      const updated = await tx.order.update({
-        where: { id },
-        data: {
-          orderStatus: newStatus,
-          paymentStatus,
-          courier: body.courier || existing.courier,
-          trackingNumber: body.trackingNumber || existing.trackingNumber,
-        },
-      });
+    await withTransaction(async (session) => {
+      await m.Order.updateOne({ _id: id }, { $set: { orderStatus: newStatus, paymentStatus, courier, trackingNumber } }, { session });
 
       if (releasesStock) {
         const items = (Array.isArray(existing.items) ? existing.items : []) as { productId: string; quantity: number }[];
         for (const item of items) {
-          await tx.product.updateMany({ where: { id: item.productId }, data: { stock: { increment: item.quantity } } });
+          await m.Product.updateOne({ _id: item.productId }, { $inc: { stock: item.quantity } }, { session });
         }
       }
 
-      await tx.activityLog.create({
-        data: {
-          adminName: admin.name,
-          action: 'Updated Order Status',
-          details: `Order ${id} → ${newStatus}${releasesStock ? ' (stock returned to inventory)' : ''}`,
-        },
-      });
-      await tx.sheetSyncLog.create({
-        data: { sheetName: 'SALES REGISTER', orderId: id, event: `Status updated to ${newStatus}` },
-      });
-      return updated;
+      await m.ActivityLog.create(
+        [
+          {
+            adminName: admin.name,
+            action: 'Updated Order Status',
+            details: `Order ${id} → ${newStatus}${releasesStock ? ' (stock returned to inventory)' : ''}`,
+          },
+        ],
+        { session }
+      );
+      await m.SheetSyncLog.create([{ sheetName: 'SALES REGISTER', orderId: id, event: `Status updated to ${newStatus}` }], { session });
     });
 
-    const trackingAdded =
-      (body.trackingNumber && body.trackingNumber !== existing.trackingNumber) || (body.courier && body.courier !== existing.courier);
+    if (releasesStock) revalidateCatalog();
+    const order = (await m.Order.findById(id))!;
+
+    const trackingAdded = trackingNumber !== existing.trackingNumber || courier !== existing.courier;
     if ((statusChanged && NOTIFY_STATUSES.includes(newStatus)) || (trackingAdded && newStatus === 'Shipped')) {
       await sendOrderStatusEmail(order);
     }
