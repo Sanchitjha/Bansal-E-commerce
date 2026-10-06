@@ -1,95 +1,87 @@
 'use client';
 
-import React from 'react';
-import { Star, ShieldCheck, Quote } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Star, BadgeCheck, Quote } from 'lucide-react';
+import { useLuminary } from '@/context/LuminaryContext';
+import { ReviewItem } from '@/types';
 
-export const CustomerReviews: React.FC = () => {
-  const reviews = [
-    {
-      id: 1,
-      name: 'Princess Ananya Singh',
-      location: 'Udaipur, Rajasthan',
-      rating: 5,
-      title: 'Hypnotic Oud & Unmatched Longevity',
-      review:
-        'The Royal Imperial Oud EDP is beyond divine. The richness of Assam Oud blended with velvet rose lasts for over 24 hours. The luxury glass packaging is fit for royalty.',
-      verified: true,
-      product: 'Royal Imperial Oud EDP',
-    },
-    {
-      id: 2,
-      name: 'Dr. Siddharth Vardhan',
-      location: 'Bengaluru, Karnataka',
-      rating: 5,
-      title: 'Transformed My Night Skin Routine',
-      review:
-        'The 24K Gold Kumkumadi Night Elixir is the only authentic Ayurvedic serum that actually works without feeling greasy. Real gold flakes melt into skin seamlessly.',
-      verified: true,
-      product: 'Kumkumadi 24K Gold Elixir',
-    },
-    {
-      id: 3,
-      name: 'Kavita Subramaniam',
-      location: 'Chennai, Tamil Nadu',
-      rating: 5,
-      title: 'Perfect Corporate & Bulk Gift Sets',
-      review:
-        'We ordered 150 custom boxed Velvet Rose gift sets for our corporate gala. Luminary concierge delivered on time with exquisite gold foil branding.',
-      verified: true,
-      product: 'Velvet Rose Gift Box',
-    },
-  ];
+interface CustomerReviewsProps {
+  onWriteReview: () => void;
+}
+
+export const CustomerReviews: React.FC<CustomerReviewsProps> = ({ onWriteReview }) => {
+  const { products, reviews: newReviews } = useLuminary();
+  const [fetched, setFetched] = useState<ReviewItem[]>([]);
+
+  useEffect(() => {
+    fetch('/api/reviews')
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: ReviewItem[]) => setFetched(Array.isArray(data) ? data : []))
+      .catch(() => setFetched([]));
+  }, []);
+
+  // Reviews submitted in this session show up immediately, de-duplicated against the fetched list.
+  const seen = new Set<string>();
+  const reviews = [...newReviews, ...fetched]
+    .filter((r) => (seen.has(r.id) ? false : (seen.add(r.id), true)))
+    .slice(0, 6);
+
+  const totalReviews = products.reduce((sum, p) => sum + p.reviewsCount, 0);
 
   return (
-    <section className="py-16 bg-slate-50 dark:bg-obsidian-950 border-b border-slate-200 dark:border-slate-800 transition-colors duration-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <span className="text-xs font-extrabold uppercase tracking-widest text-amber-600 dark:text-gold-400">
-            VERIFIED BUYER TESTIMONIALS
-          </span>
-          <h2 className="font-serif text-3xl font-bold text-slate-900 dark:text-slate-100 mt-2">
-            Loved By Luxury Connoisseurs
-          </h2>
-          <p className="text-xs text-slate-600 dark:text-slate-400 mt-2 font-medium">
-            Over 12,000+ satisfied customers across India trust Luminary for artisanal elegance.
-          </p>
-        </div>
+    <section id="reviews" className="scroll-mt-24 max-w-[1400px] mx-auto px-4 sm:px-6 py-12">
+      <div className="text-center max-w-2xl mx-auto mb-8">
+        <h2 className="text-3xl sm:text-4xl font-bold text-brand-green-800">
+          {totalReviews > 0 ? `Over ${totalReviews.toLocaleString('en-IN')}+ People Trust Luminary` : 'What Our Customers Say'}
+        </h2>
+        <p className="text-sm text-slate-600 mt-2">
+          Authentic fragrances, Ayurvedic care and smart lifestyle products, chosen by customers across India.
+        </p>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {reviews.map((rev) => (
-            <div
-              key={rev.id}
-              className="p-6 rounded-2xl bg-white dark:bg-obsidian-900 border border-slate-200 dark:border-slate-800 hover:border-amber-500/40 transition shadow-md hover:shadow-xl flex flex-col justify-between space-y-4"
-            >
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex text-amber-500">
-                    {[...Array(rev.rating)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-current" />
-                    ))}
-                  </div>
-                  <Quote className="w-6 h-6 text-amber-500/30" />
+      {reviews.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {reviews.map((rev) => {
+            const product = products.find((p) => p.id === rev.productId);
+            return (
+              <figure key={rev.id} className="bg-white rounded-2xl border border-stone-200 p-6 flex flex-col gap-4">
+                <Quote className="w-7 h-7 text-brand-orange-500/60" />
+                <div className="flex text-amber-500">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Star key={s} className={`w-4 h-4 ${s <= rev.rating ? 'fill-current' : 'text-stone-300'}`} />
+                  ))}
                 </div>
-
-                <h4 className="font-serif text-sm font-bold text-slate-900 dark:text-slate-100">"{rev.title}"</h4>
-                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-normal">{rev.review}</p>
-              </div>
-
-              <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
                 <div>
-                  <span className="font-bold text-slate-900 dark:text-slate-200 block">{rev.name}</span>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">{rev.location}</span>
+                  <h3 className="font-semibold text-slate-900 text-[15px]">{rev.title}</h3>
+                  <blockquote className="text-sm text-slate-600 leading-relaxed mt-1 line-clamp-5">“{rev.content}”</blockquote>
                 </div>
-                <div className="text-right">
-                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold flex items-center gap-1 justify-end">
-                    <ShieldCheck className="w-3 h-3" /> Verified Buyer
-                  </span>
-                  <span className="text-[10px] text-amber-600 dark:text-gold-400 font-mono font-bold block">{rev.product}</span>
-                </div>
-              </div>
-            </div>
-          ))}
+                <figcaption className="mt-auto pt-3 border-t border-stone-100 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-slate-900 truncate">{rev.author}</div>
+                    <div className="text-xs text-slate-500 truncate">
+                      {rev.location}
+                      {product ? ` · ${product.name}` : ''}
+                    </div>
+                  </div>
+                  {rev.verified && (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-green-700 shrink-0">
+                      <BadgeCheck className="w-4 h-4" /> Verified
+                    </span>
+                  )}
+                </figcaption>
+              </figure>
+            );
+          })}
         </div>
+      )}
+
+      <div className="text-center mt-8">
+        <button
+          onClick={onWriteReview}
+          className="px-6 py-3 rounded-full bg-brand-green-700 hover:bg-brand-green-800 text-white text-sm font-semibold transition"
+        >
+          Write a review & earn 10% off
+        </button>
       </div>
     </section>
   );

@@ -123,6 +123,18 @@ async function main() {
       date: new Date('2026-09-22'),
       verified: true,
     },
+    {
+      id: 'rev-3',
+      productId: 'prod-3',
+      author: 'Kavita Subramaniam',
+      location: 'Chennai, TN',
+      rating: 5,
+      title: 'Perfect Corporate & Bulk Gift Sets',
+      content:
+        'We ordered 150 custom boxed Velvet Rose gift sets for our corporate gala. Luminary delivered on time with exquisite gold foil branding.',
+      date: new Date('2026-09-24'),
+      verified: true,
+    },
   ];
   for (const r of INITIAL_REVIEWS) {
     const { id, ...rest } = r;

@@ -3,7 +3,7 @@
 @import "tailwindcss/utilities";
 
 :root {
-  --background: #f8fafc;
+  --background: #f6f0e4;
   --foreground: #0f172a;
   --card-bg: #ffffff;
   --card-border: rgba(234, 179, 8, 0.25);
@@ -46,7 +46,18 @@ body {
   background: #272a38;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #eab308;
+  background: #3b7332;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }
 
 /* Glassmorphic Effects */

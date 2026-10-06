@@ -1,13 +1,18 @@
 'use client';
 
 import React, { useState } from 'react';
+import { AnnouncementBar } from '@/components/layout/AnnouncementBar';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { HeroBannerSlider } from '@/components/home/HeroBannerSlider';
-import { CategorySection } from '@/components/home/CategorySection';
-import { ProductCard } from '@/components/home/ProductCard';
+import { TrustStrip } from '@/components/home/TrustStrip';
+import { ShopByDivision } from '@/components/home/ShopByDivision';
+import { Bestsellers } from '@/components/home/Bestsellers';
+import { ShopByCategories } from '@/components/home/ShopByCategories';
 import { DealsAndBulkSection } from '@/components/home/DealsAndBulkSection';
 import { CustomerReviews } from '@/components/home/CustomerReviews';
+import { BlogSection } from '@/components/home/BlogSection';
+import { ConsultationBanner } from '@/components/home/ConsultationBanner';
 import { PincodeCheckerWidget } from '@/components/shipping/PincodeCheckerWidget';
 
 // Modals
@@ -23,10 +28,10 @@ import { SubmitReviewModal } from '@/components/reviews/SubmitReviewModal';
 
 import { useLuminary } from '@/context/LuminaryContext';
 import { Product, Order } from '@/types';
-import { CheckCircle2, Sparkles, Award } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 
 export default function HomePage() {
-  const { products, activeCategoryFilter, setActiveCategoryFilter, formatPrice } = useLuminary();
+  const { products, formatPrice } = useLuminary();
 
   // State for Modals
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -41,23 +46,17 @@ export default function HomePage() {
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [successOrder, setSuccessOrder] = useState<Order | null>(null);
 
-  // Filter Products based on selected category
-  const filteredProducts = products.filter((p) => {
-    if (activeCategoryFilter === 'all') return true;
-    return p.category === activeCategoryFilter;
-  });
-
   const handleOpenBulkForProduct = (product?: Product) => {
-    if (product) setBulkProductTarget(product);
+    setBulkProductTarget(product ?? null);
     setIsBulkModalOpen(true);
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-obsidian-950 text-slate-900 dark:text-slate-100 flex flex-col justify-between transition-colors duration-300">
-      {/* Header */}
+    <div className="min-h-screen bg-brand-cream text-slate-900 flex flex-col">
+      <AnnouncementBar />
+
       <Header
         onOpenCart={() => setIsCartOpen(true)}
-        onOpenWishlist={() => setIsCartOpen(true)}
         onOpenBulkModal={() => handleOpenBulkForProduct()}
         onOpenTrackOrder={() => setIsTrackOrderOpen(true)}
         onOpenAdmin={() => setIsAdminOpen(true)}
@@ -67,7 +66,6 @@ export default function HomePage() {
       />
 
       <main className="flex-1">
-        {/* Dynamic Admin-Managed Hero Banner Slider */}
         <HeroBannerSlider
           onSelectProduct={(id) => {
             const p = products.find((item) => item.id === id);
@@ -76,100 +74,32 @@ export default function HomePage() {
           onOpenBulkModal={() => handleOpenBulkForProduct()}
         />
 
-        {/* 3 Divisions Category Section */}
-        <CategorySection />
+        <TrustStrip />
 
-        {/* Main Product Catalog Section */}
-        <section id="catalog-section" className="py-14 bg-slate-50 dark:bg-obsidian-950 border-b border-slate-200 dark:border-slate-800 transition-colors duration-300">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            {/* Section Title & Filter Tabs */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
-              <div>
-                <span className="text-xs font-extrabold uppercase tracking-widest text-amber-600 dark:text-gold-400">
-                  CURATED LUXURY SELECTION
-                </span>
-                <h2 className="font-serif text-3xl font-bold text-slate-900 dark:text-slate-100 mt-1">
-                  {activeCategoryFilter === 'all'
-                    ? 'All Commercial Offerings'
-                    : activeCategoryFilter === 'fragrance'
-                    ? 'Luxury Perfumes & Attars'
-                    : activeCategoryFilter === 'ayurvedic'
-                    ? 'Ayurvedic & Herbal Care'
-                    : 'Mini Gadgets & Lifestyle'}
-                </h2>
-                <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 font-medium">
-                  Retail & Wholesale Bulk Quantity Slabs Available for Every Product
-                </p>
-              </div>
+        <ShopByDivision onQuickView={(p) => setSelectedProduct(p)} onOpenBulkModal={handleOpenBulkForProduct} />
 
-              <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-bold">
-                <button
-                  onClick={() => setIsQuizOpen(true)}
-                  className="px-3.5 py-2 rounded-full uppercase tracking-wider bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/40 font-extrabold flex items-center gap-1 shadow-sm hover:scale-105 transition shrink-0"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Find My Scent</span>
-                </button>
+        <Bestsellers onQuickView={(p) => setSelectedProduct(p)} onOpenBulkModal={handleOpenBulkForProduct} />
 
-                {(['all', 'fragrance', 'ayurvedic', 'gadgets'] as const).map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setActiveCategoryFilter(cat)}
-                    className={`px-4 py-2 rounded-full uppercase tracking-wider transition shadow-sm shrink-0 ${
-                      activeCategoryFilter === cat
-                        ? 'gold-gradient-bg text-slate-950 shadow-md font-extrabold'
-                        : 'bg-white dark:bg-obsidian-900 text-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:text-amber-600 dark:hover:text-gold-300'
-                    }`}
-                  >
-                    {cat === 'all' ? 'All Divisions' : cat}
-                  </button>
-                ))}
-              </div>
-            </div>
+        <ShopByCategories />
 
-            {/* Product Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {filteredProducts.map((prod) => (
-                <ProductCard
-                  key={prod.id}
-                  product={prod}
-                  onQuickView={(p) => setSelectedProduct(p)}
-                  onOpenBulkModal={(p) => handleOpenBulkForProduct(p)}
-                />
-              ))}
-            </div>
-          </div>
+        <DealsAndBulkSection onOpenBulkModal={handleOpenBulkForProduct} />
+
+        <section className="max-w-3xl mx-auto px-4 pb-6">
+          <PincodeCheckerWidget />
         </section>
 
-        {/* Pincode & Express Delivery Checker Section */}
-        <section className="py-10 bg-slate-100 dark:bg-obsidian-950 border-b border-slate-200 dark:border-slate-800">
-          <div className="max-w-3xl mx-auto px-4">
-            <PincodeCheckerWidget />
-          </div>
-        </section>
+        <CustomerReviews onWriteReview={() => setIsReviewOpen(true)} />
 
-        {/* Wholesale & B2B Deals Banner */}
-        <DealsAndBulkSection onOpenBulkModal={() => handleOpenBulkForProduct()} />
+        <BlogSection />
 
-        {/* Verified Customer Reviews */}
-        <div className="relative">
-          <CustomerReviews />
-          <div className="text-center py-4 bg-slate-50 dark:bg-obsidian-950 border-b border-slate-200 dark:border-slate-800">
-            <button
-              onClick={() => setIsReviewOpen(true)}
-              className="px-5 py-2.5 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-800 dark:text-gold-300 font-extrabold text-xs uppercase tracking-wider hover:scale-105 transition shadow-sm inline-flex items-center gap-2"
-            >
-              <Award className="w-4 h-4 text-amber-500" />
-              <span>+ Write a Product Review & Earn 10% OFF</span>
-            </button>
-          </div>
-        </div>
+        <ConsultationBanner />
       </main>
 
-      {/* Footer */}
       <Footer
         onOpenAdmin={() => setIsAdminOpen(true)}
         onOpenBulkModal={() => handleOpenBulkForProduct()}
+        onOpenTrackOrder={() => setIsTrackOrderOpen(true)}
+        onOpenReviewModal={() => setIsReviewOpen(true)}
       />
 
       {/* All Application Modals */}
@@ -178,7 +108,7 @@ export default function HomePage() {
           product={selectedProduct}
           onClose={() => setSelectedProduct(null)}
           onOpenBulkModal={(p) => handleOpenBulkForProduct(p)}
-          onDirectBuy={(p, qty) => {
+          onDirectBuy={() => {
             setSelectedProduct(null);
             setIsCheckoutOpen(true);
           }}
@@ -210,10 +140,7 @@ export default function HomePage() {
         preSelectedProduct={bulkProductTarget}
       />
 
-      <OrderTrackingModal
-        isOpen={isTrackOrderOpen}
-        onClose={() => setIsTrackOrderOpen(false)}
-      />
+      <OrderTrackingModal isOpen={isTrackOrderOpen} onClose={() => setIsTrackOrderOpen(false)} />
 
       <SearchModal
         isOpen={isSearchOpen}
@@ -221,10 +148,7 @@ export default function HomePage() {
         onSelectProduct={(p) => setSelectedProduct(p)}
       />
 
-      <AdminDashboardModal
-        isOpen={isAdminOpen}
-        onClose={() => setIsAdminOpen(false)}
-      />
+      <AdminDashboardModal isOpen={isAdminOpen} onClose={() => setIsAdminOpen(false)} />
 
       <FragranceQuizModal
         isOpen={isQuizOpen}
@@ -232,34 +156,34 @@ export default function HomePage() {
         onSelectProduct={(p) => setSelectedProduct(p)}
       />
 
-      <SubmitReviewModal
-        isOpen={isReviewOpen}
-        onClose={() => setIsReviewOpen(false)}
-      />
+      <SubmitReviewModal isOpen={isReviewOpen} onClose={() => setIsReviewOpen(false)} />
 
       {/* Order Success Popup Dialog */}
       {successOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-          <div className="relative w-full max-w-md bg-white dark:bg-obsidian-900 border border-amber-500/40 rounded-3xl p-6 shadow-2xl text-center space-y-4 text-slate-900 dark:text-slate-100 animate-fade-in">
-            <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-500 border border-emerald-500/40 flex items-center justify-center mx-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="relative w-full max-w-md bg-white rounded-3xl p-7 shadow-2xl text-center space-y-4 animate-fade-in">
+            <div className="w-16 h-16 rounded-full bg-brand-green-100 text-brand-green-700 flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-8 h-8" />
             </div>
 
-            <h3 className="font-serif text-2xl font-bold text-slate-900 dark:text-slate-100">Order Placed Successfully!</h3>
-            <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">
-              Thank you for choosing Luminary. Your order ID is{' '}
-              <strong className="font-mono text-amber-600 dark:text-gold-300 font-extrabold">{successOrder.id}</strong>.
+            <h3 className="text-2xl font-bold text-brand-green-800">Order Placed Successfully!</h3>
+            <p className="text-sm text-slate-600">
+              Thank you for shopping with Luminary. Your order ID is{' '}
+              <strong className="font-mono text-brand-orange-600">{successOrder.id}</strong>. Keep it handy to track your order.
             </p>
 
-            <div className="p-3 rounded-xl bg-slate-100 dark:bg-obsidian-950 border border-slate-200 dark:border-slate-800 text-xs space-y-1 text-slate-600 dark:text-slate-400">
-              <p>Amount Paid: <span className="font-mono text-amber-600 dark:text-gold-300 font-bold">{formatPrice(successOrder.totalAmount)}</span></p>
-              <p>Payment Method: <span className="text-slate-900 dark:text-slate-200 font-semibold">{successOrder.paymentMethod}</span></p>
-              <p className="text-[10px] text-emerald-600 dark:text-emerald-400 pt-1 font-bold">✓ Order details synchronized to Google Sheets Sales Register.</p>
+            <div className="p-4 rounded-xl bg-stone-50 border border-stone-200 text-sm space-y-1 text-slate-600">
+              <p>
+                Amount: <span className="font-bold text-slate-900">{formatPrice(successOrder.totalAmount)}</span>
+              </p>
+              <p>
+                Payment: <span className="font-semibold text-slate-900">{successOrder.paymentMethod}</span>
+              </p>
             </div>
 
             <button
               onClick={() => setSuccessOrder(null)}
-              className="w-full py-3 rounded-xl gold-gradient-bg text-slate-950 font-bold text-xs uppercase shadow-md"
+              className="w-full py-3 rounded-full bg-brand-orange-500 hover:bg-brand-orange-600 text-white font-bold text-sm transition"
             >
               Back to Store
             </button>

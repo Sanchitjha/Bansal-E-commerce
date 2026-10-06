@@ -55,32 +55,32 @@ export const FragranceQuizModal: React.FC<FragranceQuizModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-obsidian-950/85 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-xl bg-white dark:bg-obsidian-900 border border-amber-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl animate-fade-in text-slate-900 dark:text-slate-100 my-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-md overflow-y-auto">
+      <div className="relative w-full max-w-xl bg-white dark:bg-white border border-amber-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl animate-fade-in text-slate-900 dark:text-slate-900 my-8">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition"
+          className="absolute top-4 right-4 p-2 rounded-full hover:bg-slate-200 dark:hover:bg-stone-100 text-slate-500 dark:text-slate-500 transition"
         >
           <X className="w-5 h-5" />
         </button>
 
         {step <= 3 && (
           <div className="space-y-6">
-            <div className="flex items-center gap-2 text-amber-600 dark:text-gold-400 font-extrabold text-xs uppercase tracking-widest">
+            <div className="flex items-center gap-2 text-amber-600 dark:text-brand-green-700 font-extrabold text-xs uppercase tracking-widest">
               <Sparkles className="w-4 h-4" />
               <span>AI Signature Scent & Elixir Finder • Step {step} of 3</span>
             </div>
 
-            <div className="w-full bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+            <div className="w-full bg-slate-200 dark:bg-stone-200 h-1.5 rounded-full overflow-hidden">
               <div
-                className="h-full gold-gradient-bg transition-all duration-500 rounded-full"
+                className="h-full bg-brand-orange-500 hover:bg-brand-orange-600 text-white transition-all duration-500 rounded-full"
                 style={{ width: `${(step / 3) * 100}%` }}
               />
             </div>
 
             {step === 1 && (
               <div className="space-y-4">
-                <h3 className="font-serif text-2xl font-bold">What is your primary occasion or goal?</h3>
+                <h3 className=" text-2xl font-bold">What is your primary occasion or goal?</h3>
                 <div className="grid grid-cols-1 gap-3">
                   {[
                     { title: 'Royalty & Evening Formal', sub: 'Long lasting opulence for galas, weddings & dates' },
@@ -90,12 +90,12 @@ export const FragranceQuizModal: React.FC<FragranceQuizModalProps> = ({
                     <button
                       key={opt.title}
                       onClick={() => handleSelectOption('occasion', opt.title)}
-                      className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-amber-500 bg-slate-50 dark:bg-obsidian-950 text-left transition hover:-translate-y-0.5 shadow-sm group"
+                      className="p-4 rounded-2xl border border-slate-200 dark:border-stone-200 hover:border-amber-500 bg-slate-50 dark:bg-stone-50 text-left transition hover:-translate-y-0.5 shadow-sm group"
                     >
-                      <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100 group-hover:text-amber-600 dark:group-hover:text-gold-300">
+                      <h4 className="font-bold text-sm text-slate-900 dark:text-slate-900 group-hover:text-amber-600 dark:group-hover:text-brand-green-700">
                         {opt.title}
                       </h4>
-                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 font-medium">{opt.sub}</p>
+                      <p className="text-xs text-slate-600 dark:text-slate-500 mt-1 font-medium">{opt.sub}</p>
                     </button>
                   ))}
                 </div>
@@ -104,7 +104,7 @@ export const FragranceQuizModal: React.FC<FragranceQuizModalProps> = ({
 
             {step === 2 && (
               <div className="space-y-4">
-                <h3 className="font-serif text-2xl font-bold">Which scent or herbal note appeals to you most?</h3>
+                <h3 className=" text-2xl font-bold">Which scent or herbal note appeals to you most?</h3>
                 <div className="grid grid-cols-1 gap-3">
                   {[
                     { title: 'Assam Aged Oud Wood & Damascus Rose', sub: 'Warm, spicy, resinous & hypnotic' },
@@ -114,12 +114,12 @@ export const FragranceQuizModal: React.FC<FragranceQuizModalProps> = ({
                     <button
                       key={opt.title}
                       onClick={() => handleSelectOption('notes', opt.title)}
-                      className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-amber-500 bg-slate-50 dark:bg-obsidian-950 text-left transition hover:-translate-y-0.5 shadow-sm group"
+                      className="p-4 rounded-2xl border border-slate-200 dark:border-stone-200 hover:border-amber-500 bg-slate-50 dark:bg-stone-50 text-left transition hover:-translate-y-0.5 shadow-sm group"
                     >
-                      <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100 group-hover:text-amber-600 dark:group-hover:text-gold-300">
+                      <h4 className="font-bold text-sm text-slate-900 dark:text-slate-900 group-hover:text-amber-600 dark:group-hover:text-brand-green-700">
                         {opt.title}
                       </h4>
-                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 font-medium">{opt.sub}</p>
+                      <p className="text-xs text-slate-600 dark:text-slate-500 mt-1 font-medium">{opt.sub}</p>
                     </button>
                   ))}
                 </div>
@@ -128,7 +128,7 @@ export const FragranceQuizModal: React.FC<FragranceQuizModalProps> = ({
 
             {step === 3 && (
               <div className="space-y-4">
-                <h3 className="font-serif text-2xl font-bold">Choose your preferred format:</h3>
+                <h3 className=" text-2xl font-bold">Choose your preferred format:</h3>
                 <div className="grid grid-cols-1 gap-3">
                   {[
                     { title: 'Extrait de Parfum Spray / Pure Attar', titleSub: 'Concentrated 24h lasting formula' },
@@ -138,12 +138,12 @@ export const FragranceQuizModal: React.FC<FragranceQuizModalProps> = ({
                     <button
                       key={opt.title}
                       onClick={() => handleSelectOption('intensity', opt.title)}
-                      className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-amber-500 bg-slate-50 dark:bg-obsidian-950 text-left transition hover:-translate-y-0.5 shadow-sm group"
+                      className="p-4 rounded-2xl border border-slate-200 dark:border-stone-200 hover:border-amber-500 bg-slate-50 dark:bg-stone-50 text-left transition hover:-translate-y-0.5 shadow-sm group"
                     >
-                      <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100 group-hover:text-amber-600 dark:group-hover:text-gold-300">
+                      <h4 className="font-bold text-sm text-slate-900 dark:text-slate-900 group-hover:text-amber-600 dark:group-hover:text-brand-green-700">
                         {opt.title}
                       </h4>
-                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 font-medium">{opt.titleSub}</p>
+                      <p className="text-xs text-slate-600 dark:text-slate-500 mt-1 font-medium">{opt.titleSub}</p>
                     </button>
                   ))}
                 </div>
@@ -155,25 +155,25 @@ export const FragranceQuizModal: React.FC<FragranceQuizModalProps> = ({
         {/* Step 4: Recommended Result */}
         {step === 4 && recommendedProduct && (
           <div className="space-y-6 text-center animate-fade-in">
-            <div className="w-16 h-16 rounded-full bg-amber-500/20 text-amber-600 dark:text-gold-400 border border-amber-500/40 flex items-center justify-center mx-auto shadow-md">
+            <div className="w-16 h-16 rounded-full bg-amber-500/20 text-amber-600 dark:text-brand-green-700 border border-amber-500/40 flex items-center justify-center mx-auto shadow-md">
               <Sparkles className="w-8 h-8" />
             </div>
 
             <div>
-              <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-extrabold text-xs uppercase tracking-wider border border-emerald-500/30">
+              <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-600 font-extrabold text-xs uppercase tracking-wider border border-emerald-500/30">
                 99% Match Recommended For You
               </span>
-              <h3 className="font-serif text-2xl font-bold mt-2">{recommendedProduct.name}</h3>
-              <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 max-w-sm mx-auto font-medium">
+              <h3 className=" text-2xl font-bold mt-2">{recommendedProduct.name}</h3>
+              <p className="text-xs text-slate-600 dark:text-slate-700 mt-1 max-w-sm mx-auto font-medium">
                 {recommendedProduct.shortDescription}
               </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-obsidian-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-              <img src={recommendedProduct.images[0]} alt="" className="w-16 h-16 rounded-xl object-cover border border-slate-300 dark:border-slate-800" />
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-stone-50 border border-slate-200 dark:border-stone-200 flex items-center justify-between">
+              <img src={recommendedProduct.images[0]} alt="" className="w-16 h-16 rounded-xl object-cover border border-slate-300 dark:border-stone-200" />
               <div className="text-right">
                 <span className="text-xs text-slate-500 block">Retail Price</span>
-                <span className="font-mono text-xl font-extrabold text-amber-600 dark:text-gold-300">
+                <span className="font-mono text-xl font-extrabold text-amber-600 dark:text-brand-green-700">
                   {formatPrice(recommendedProduct.sellingPrice)}
                 </span>
               </div>
@@ -182,7 +182,7 @@ export const FragranceQuizModal: React.FC<FragranceQuizModalProps> = ({
             <div className="flex gap-3 pt-2">
               <button
                 onClick={handleReset}
-                className="p-3 rounded-xl bg-slate-100 dark:bg-obsidian-950 border border-slate-300 dark:border-slate-800 text-xs font-bold flex items-center justify-center gap-1 hover:text-amber-600"
+                className="p-3 rounded-xl bg-slate-100 dark:bg-stone-50 border border-slate-300 dark:border-stone-200 text-xs font-bold flex items-center justify-center gap-1 hover:text-amber-600"
               >
                 <RefreshCw className="w-4 h-4" />
                 <span>Retake Quiz</span>
@@ -194,7 +194,7 @@ export const FragranceQuizModal: React.FC<FragranceQuizModalProps> = ({
                   onClose();
                   onSelectProduct(recommendedProduct);
                 }}
-                className="flex-1 py-3.5 rounded-xl gold-gradient-bg text-slate-950 font-extrabold text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-2 hover:scale-105 transition shimmer-btn"
+                className="flex-1 py-3.5 rounded-xl bg-brand-orange-500 hover:bg-brand-orange-600 text-white  font-extrabold text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-2 hover:scale-105 transition "
               >
                 <ShoppingBag className="w-4 h-4" />
                 <span>ADD MATCH TO CART</span>

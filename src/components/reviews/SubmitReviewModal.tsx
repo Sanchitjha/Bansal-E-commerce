@@ -42,11 +42,11 @@ export const SubmitReviewModal: React.FC<SubmitReviewModalProps> = ({ isOpen, on
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-obsidian-950/85 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-lg bg-white dark:bg-obsidian-900 border border-amber-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl animate-fade-in text-slate-900 dark:text-slate-100 my-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-md overflow-y-auto">
+      <div className="relative w-full max-w-lg bg-white dark:bg-white border border-amber-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl animate-fade-in text-slate-900 dark:text-slate-900 my-8">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 transition"
+          className="absolute top-4 right-4 p-2 rounded-full hover:bg-slate-200 dark:hover:bg-stone-100 text-slate-500 transition"
         >
           <X className="w-5 h-5" />
         </button>
@@ -56,31 +56,31 @@ export const SubmitReviewModal: React.FC<SubmitReviewModalProps> = ({ isOpen, on
             <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-500 border border-emerald-500/40 flex items-center justify-center mx-auto shadow-md">
               <CheckCircle2 className="w-8 h-8" />
             </div>
-            <h3 className="font-serif text-2xl font-bold">Review Submitted!</h3>
-            <p className="text-xs text-slate-600 dark:text-slate-300 max-w-sm mx-auto font-medium">
-              Thank you for reviewing Luminary products! Use reward coupon code <strong className="text-amber-600 dark:text-gold-300 font-mono">WELCOME10</strong> for 10% OFF your next purchase.
+            <h3 className=" text-2xl font-bold">Review Submitted!</h3>
+            <p className="text-xs text-slate-600 dark:text-slate-700 max-w-sm mx-auto font-medium">
+              Thank you for reviewing Luminary products! Use reward coupon code <strong className="text-amber-600 dark:text-brand-green-700 font-mono">WELCOME10</strong> for 10% OFF your next purchase.
             </p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="flex items-center gap-2">
-              <div className="p-2 rounded-lg bg-amber-500/15 text-amber-600 dark:text-gold-400 border border-amber-500/30">
+              <div className="p-2 rounded-lg bg-amber-500/15 text-amber-600 dark:text-brand-green-700 border border-amber-500/30">
                 <Award className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-serif text-xl font-bold">Write a Verified Buyer Review</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Share your experience & earn a 10% discount reward</p>
+                <h3 className=" text-xl font-bold">Write a Verified Buyer Review</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-500 font-medium">Share your experience & earn a 10% discount reward</p>
               </div>
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-[11px] font-bold uppercase text-slate-700 dark:text-slate-700 mb-1">
                 Select Product *
               </label>
               <select
                 value={selectedProductId}
                 onChange={(e) => setSelectedProductId(e.target.value)}
-                className="w-full p-2.5 text-xs bg-slate-50 dark:bg-obsidian-950 border border-slate-300 dark:border-slate-800 rounded-xl text-slate-900 dark:text-slate-100 outline-none"
+                className="w-full p-2.5 text-xs bg-slate-50 dark:bg-stone-50 border border-slate-300 dark:border-stone-200 rounded-xl text-slate-900 dark:text-slate-900 outline-none"
               >
                 {products.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -91,7 +91,7 @@ export const SubmitReviewModal: React.FC<SubmitReviewModalProps> = ({ isOpen, on
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-[11px] font-bold uppercase text-slate-700 dark:text-slate-700 mb-1">
                 Star Rating *
               </label>
               <div className="flex items-center gap-2 text-amber-500">
@@ -102,7 +102,7 @@ export const SubmitReviewModal: React.FC<SubmitReviewModalProps> = ({ isOpen, on
                     onClick={() => setRating(star)}
                     className="p-1 hover:scale-125 transition"
                   >
-                    <Star className={`w-6 h-6 ${star <= rating ? 'fill-current' : 'text-slate-300 dark:text-slate-700'}`} />
+                    <Star className={`w-6 h-6 ${star <= rating ? 'fill-current' : 'text-slate-700 dark:text-slate-700'}`} />
                   </button>
                 ))}
               </div>
@@ -110,7 +110,7 @@ export const SubmitReviewModal: React.FC<SubmitReviewModalProps> = ({ isOpen, on
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-[11px] font-bold uppercase text-slate-700 dark:text-slate-700 mb-1">
                   Your Name *
                 </label>
                 <input
@@ -119,12 +119,12 @@ export const SubmitReviewModal: React.FC<SubmitReviewModalProps> = ({ isOpen, on
                   placeholder="Kavita Subramaniam"
                   value={author}
                   onChange={(e) => setAuthor(e.target.value)}
-                  className="w-full p-2.5 text-xs bg-slate-50 dark:bg-obsidian-950 border border-slate-300 dark:border-slate-800 rounded-xl text-slate-900 dark:text-slate-100 outline-none"
+                  className="w-full p-2.5 text-xs bg-slate-50 dark:bg-stone-50 border border-slate-300 dark:border-stone-200 rounded-xl text-slate-900 dark:text-slate-900 outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-[11px] font-bold uppercase text-slate-700 dark:text-slate-700 mb-1">
                   City / Location
                 </label>
                 <input
@@ -132,13 +132,13 @@ export const SubmitReviewModal: React.FC<SubmitReviewModalProps> = ({ isOpen, on
                   placeholder="Mumbai, MH"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  className="w-full p-2.5 text-xs bg-slate-50 dark:bg-obsidian-950 border border-slate-300 dark:border-slate-800 rounded-xl text-slate-900 dark:text-slate-100 outline-none"
+                  className="w-full p-2.5 text-xs bg-slate-50 dark:bg-stone-50 border border-slate-300 dark:border-stone-200 rounded-xl text-slate-900 dark:text-slate-900 outline-none"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-[11px] font-bold uppercase text-slate-700 dark:text-slate-700 mb-1">
                 Headline Title *
               </label>
               <input
@@ -147,12 +147,12 @@ export const SubmitReviewModal: React.FC<SubmitReviewModalProps> = ({ isOpen, on
                 placeholder="e.g. Hypnotic Scent & Unmatched Longevity!"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full p-2.5 text-xs bg-slate-50 dark:bg-obsidian-950 border border-slate-300 dark:border-slate-800 rounded-xl text-slate-900 dark:text-slate-100 outline-none"
+                className="w-full p-2.5 text-xs bg-slate-50 dark:bg-stone-50 border border-slate-300 dark:border-stone-200 rounded-xl text-slate-900 dark:text-slate-900 outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold uppercase text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-[11px] font-bold uppercase text-slate-700 dark:text-slate-700 mb-1">
                 Detailed Feedback *
               </label>
               <textarea
@@ -161,13 +161,13 @@ export const SubmitReviewModal: React.FC<SubmitReviewModalProps> = ({ isOpen, on
                 placeholder="Write your review comments here..."
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                className="w-full p-2.5 text-xs bg-slate-50 dark:bg-obsidian-950 border border-slate-300 dark:border-slate-800 rounded-xl text-slate-900 dark:text-slate-100 outline-none resize-none"
+                className="w-full p-2.5 text-xs bg-slate-50 dark:bg-stone-50 border border-slate-300 dark:border-stone-200 rounded-xl text-slate-900 dark:text-slate-900 outline-none resize-none"
               />
             </div>
 
             <button
               type="submit"
-              className="w-full py-3.5 rounded-xl gold-gradient-bg text-slate-950 font-extrabold text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-2 hover:scale-105 transition shimmer-btn"
+              className="w-full py-3.5 rounded-xl bg-brand-orange-500 hover:bg-brand-orange-600 text-white  font-extrabold text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-2 hover:scale-105 transition "
             >
               <Send className="w-4 h-4" />
               <span>SUBMIT REVIEW & CLAIM DISCOUNT</span>

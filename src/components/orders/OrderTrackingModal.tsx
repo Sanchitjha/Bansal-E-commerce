@@ -50,21 +50,21 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({ isOpen, 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-obsidian-950/80 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-2xl bg-obsidian-900 border border-gold-500/30 rounded-3xl shadow-2xl overflow-hidden animate-fade-in text-slate-100 my-8">
-        <div className="p-6 bg-obsidian-950 border-b border-slate-800 flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-md overflow-y-auto">
+      <div className="relative w-full max-w-2xl bg-white border border-stone-200 rounded-3xl shadow-2xl overflow-hidden animate-fade-in text-slate-900 my-8">
+        <div className="p-6 bg-stone-50 border-b border-stone-200 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-gold-500/10 text-gold-400 border border-gold-500/30">
+            <div className="p-2.5 rounded-xl bg-brand-green-50 text-brand-green-700 border border-stone-200">
               <Package className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-serif text-lg font-bold text-slate-100">Live Order Tracking</h3>
-              <p className="text-xs text-slate-400">Track shipment status with Order ID or Registered Mobile</p>
+              <h3 className=" text-lg font-bold text-slate-900">Live Order Tracking</h3>
+              <p className="text-xs text-slate-500">Track shipment status with Order ID or Registered Mobile</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-slate-800 text-slate-400 hover:text-gold-300 transition"
+            className="p-2 rounded-full hover:bg-stone-100 text-slate-500 hover:text-brand-green-700 transition"
           >
             <X className="w-5 h-5" />
           </button>
@@ -78,12 +78,12 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({ isOpen, 
               placeholder="Enter your Order ID (e.g. LF-20260928-000001)"
               value={searchId}
               onChange={(e) => setSearchId(e.target.value)}
-              className="flex-1 px-4 py-2.5 text-xs bg-obsidian-950 border border-slate-800 focus:border-gold-500 rounded-xl text-slate-100 placeholder-slate-500 outline-none font-mono"
+              className="flex-1 px-4 py-2.5 text-xs bg-stone-50 border border-stone-200 focus:border-brand-green-600 rounded-xl text-slate-900 placeholder-slate-500 outline-none font-mono"
             />
             <button
               type="submit"
               disabled={isSearching}
-              className="px-6 py-2.5 rounded-xl gold-gradient-bg text-obsidian-950 font-bold text-xs uppercase tracking-wider shadow-gold-glow hover:scale-105 transition flex items-center gap-1.5 disabled:opacity-60"
+              className="px-6 py-2.5 rounded-xl bg-brand-orange-500 hover:bg-brand-orange-600 text-white  font-bold text-xs uppercase tracking-wider shadow-md hover:scale-105 transition flex items-center gap-1.5 disabled:opacity-60"
             >
               <Search className="w-4 h-4" />
               <span>{isSearching ? 'Searching...' : 'Track'}</span>
@@ -92,21 +92,21 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({ isOpen, 
 
           {/* Results Display */}
           {searchedOrder ? (
-            <div className="space-y-6 pt-2 border-t border-slate-800">
+            <div className="space-y-6 pt-2 border-t border-stone-200">
               {/* Status Header */}
-              <div className="p-4 rounded-2xl bg-obsidian-950 border border-gold-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <span className="text-[10px] text-slate-400 uppercase font-semibold">Order Reference</span>
-                  <h4 className="font-mono text-base font-bold text-gold-300">{searchedOrder.id}</h4>
-                  <p className="text-[11px] text-slate-400">{new Date(searchedOrder.date).toLocaleString()} • {searchedOrder.customerName}</p>
+                  <span className="text-[10px] text-slate-500 uppercase font-semibold">Order Reference</span>
+                  <h4 className="font-mono text-base font-bold text-brand-green-700">{searchedOrder.id}</h4>
+                  <p className="text-[11px] text-slate-500">{new Date(searchedOrder.date).toLocaleString()} • {searchedOrder.customerName}</p>
                 </div>
                 <div className="text-left sm:text-right">
-                  <span className="text-[10px] text-slate-400 uppercase font-semibold">Current Status</span>
-                  <div className="px-3 py-1 rounded-full bg-gold-500/20 border border-gold-500/40 text-gold-300 font-bold text-xs inline-block mt-0.5">
+                  <span className="text-[10px] text-slate-500 uppercase font-semibold">Current Status</span>
+                  <div className="px-3 py-1 rounded-full bg-brand-green-50 border border-brand-green-600/40 text-brand-green-700 font-bold text-xs inline-block mt-0.5">
                     {searchedOrder.orderStatus}
                   </div>
                   {searchedOrder.courier && (
-                    <p className="text-[11px] text-slate-300 mt-1 font-mono">
+                    <p className="text-[11px] text-slate-700 mt-1 font-mono">
                       {searchedOrder.courier} ({searchedOrder.trackingNumber || 'N/A'})
                     </p>
                   )}
@@ -115,7 +115,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({ isOpen, 
 
               {/* Workflow Stepper */}
               <div>
-                <h5 className="text-xs font-bold uppercase tracking-wider text-gold-400 mb-3">
+                <h5 className="text-xs font-bold uppercase tracking-wider text-brand-green-700 mb-3">
                   Shipment Progress Steps
                 </h5>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-[11px]">
@@ -127,8 +127,8 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({ isOpen, 
                         key={step}
                         className={`p-2.5 rounded-xl border transition ${
                           isPassed
-                            ? 'bg-gold-500/20 border-gold-400 text-gold-300 font-bold'
-                            : 'bg-obsidian-950 border-slate-800 text-slate-500'
+                            ? 'bg-brand-green-50 border-brand-green-600 text-brand-green-700 font-bold'
+                            : 'bg-stone-50 border-stone-200 text-slate-500'
                         }`}
                       >
                         <div className="w-5 h-5 rounded-full mx-auto mb-1 flex items-center justify-center text-[10px]">
@@ -143,37 +143,37 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({ isOpen, 
 
               {/* Order Items & Shipping Address */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                <div className="p-3.5 rounded-xl bg-obsidian-950 border border-slate-800 space-y-2">
-                  <span className="font-bold text-slate-300 block border-b border-slate-800 pb-1">
+                <div className="p-3.5 rounded-xl bg-stone-50 border border-stone-200 space-y-2">
+                  <span className="font-bold text-slate-700 block border-b border-stone-200 pb-1">
                     Purchased Items ({searchedOrder.items.length})
                   </span>
                   {searchedOrder.items.map((item, i) => (
-                    <div key={i} className="flex justify-between text-slate-300">
+                    <div key={i} className="flex justify-between text-slate-700">
                       <span className="truncate max-w-[180px]">{item.productName}</span>
-                      <span className="font-mono text-gold-300 font-bold">
+                      <span className="font-mono text-brand-green-700 font-bold">
                         x{item.quantity} = ₹{item.totalPrice}
                       </span>
                     </div>
                   ))}
-                  <div className="pt-2 border-t border-slate-800 font-bold flex justify-between text-slate-100">
+                  <div className="pt-2 border-t border-stone-200 font-bold flex justify-between text-slate-900">
                     <span>Order Total</span>
-                    <span className="font-mono text-gold-300">₹{searchedOrder.totalAmount}</span>
+                    <span className="font-mono text-brand-green-700">₹{searchedOrder.totalAmount}</span>
                   </div>
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-obsidian-950 border border-slate-800 space-y-2">
-                  <span className="font-bold text-slate-300 block border-b border-slate-800 pb-1">
+                <div className="p-3.5 rounded-xl bg-stone-50 border border-stone-200 space-y-2">
+                  <span className="font-bold text-slate-700 block border-b border-stone-200 pb-1">
                     Shipping & Payment
                   </span>
-                  <p className="text-slate-400">{searchedOrder.shippingAddress}, {searchedOrder.city}, {searchedOrder.state} - {searchedOrder.pincode}</p>
-                  <p className="text-slate-400">Payment: <strong className="text-slate-200">{searchedOrder.paymentMethod}</strong> ({searchedOrder.paymentStatus})</p>
+                  <p className="text-slate-500">{searchedOrder.shippingAddress}, {searchedOrder.city}, {searchedOrder.state} - {searchedOrder.pincode}</p>
+                  <p className="text-slate-500">Payment: <strong className="text-slate-800">{searchedOrder.paymentMethod}</strong> ({searchedOrder.paymentStatus})</p>
                 </div>
               </div>
             </div>
           ) : searched ? (
-            <div className="p-8 text-center text-slate-400 space-y-2 border-t border-slate-800">
-              <AlertCircle className="w-8 h-8 text-rose-400 mx-auto" />
-              <p className="font-semibold text-slate-200">No order found with reference '{searchId}'</p>
+            <div className="p-8 text-center text-slate-500 space-y-2 border-t border-stone-200">
+              <AlertCircle className="w-8 h-8 text-rose-600 mx-auto" />
+              <p className="font-semibold text-slate-800">No order found with reference '{searchId}'</p>
               <p className="text-xs">Please verify your order confirmation ID or contact Concierge.</p>
             </div>
           ) : null}

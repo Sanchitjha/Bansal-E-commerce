@@ -32,6 +32,26 @@ const config: Config = {
           600: '#2e3346',
           500: '#434b63',
         },
+        brand: {
+          green: {
+            50: '#eef4ea',
+            100: '#e1ebdb',
+            200: '#c8dbbe',
+            500: '#4a8a3f',
+            600: '#3b7332',
+            700: '#2f5d27',
+            800: '#264b20',
+            900: '#1d3a18',
+          },
+          orange: {
+            400: '#f58a4a',
+            500: '#f26b1d',
+            600: '#dc5a10',
+          },
+          cream: '#f6f0e4',
+          sage: '#e8ece3',
+          mint: '#e6f2e8',
+        },
         ayurveda: {
           500: '#2d6a4f',
           400: '#40916c',
@@ -57,6 +77,7 @@ const config: Config = {
         'shimmer': 'shimmer 2.5s infinite linear',
         'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'float': 'float 6s ease-in-out infinite',
+        'marquee': 'marquee 30s linear infinite',
       },
       keyframes: {
         shimmer: {
@@ -66,6 +87,10 @@ const config: Config = {
         float: {
           '0%, 100%': { transform: 'translateY(0)' },
           '50%': { transform: 'translateY(-8px)' },
+        },
+        marquee: {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' },
         }
       }
     },

@@ -14,7 +14,6 @@ import {
   OrderStatus,
   BulkEnquiryStatus,
   CategoryType,
-  CurrencyCode,
   ReviewItem,
 } from '@/types';
 
@@ -42,10 +41,6 @@ type ProductInput = Omit<Product, 'id' | 'createdAt' | 'updatedAt'> & { id?: str
 type CouponInput = Omit<Coupon, 'id' | 'usageCount'> & { id?: string };
 
 interface LuminaryContextType {
-  theme: 'dark' | 'light';
-  toggleTheme: () => void;
-  currency: CurrencyCode;
-  setCurrency: (code: CurrencyCode) => void;
   formatPrice: (amountInINR: number) => string;
   products: Product[];
   cart: CartItem[];
@@ -112,13 +107,6 @@ interface LuminaryContextType {
 
 const LuminaryContext = createContext<LuminaryContextType | undefined>(undefined);
 
-const CURRENCY_RATES: Record<CurrencyCode, { symbol: string; rate: number }> = {
-  INR: { symbol: '₹', rate: 1 },
-  USD: { symbol: '$', rate: 0.012 },
-  EUR: { symbol: '€', rate: 0.011 },
-  AED: { symbol: 'د.إ', rate: 0.044 },
-};
-
 const DEFAULT_SETTINGS: SiteSettings = {
   websiteName: 'LUMINARY',
   logoText: 'LUMINARY',
@@ -154,9 +142,6 @@ interface CartApiPayload {
 }
 
 export const LuminaryProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Bright Light Mode is DEFAULT on first visit as requested by user!
-  const [theme, setTheme] = useState<'dark' | 'light'>('light');
-  const [currency, setCurrency] = useState<CurrencyCode>('INR');
   const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [wishlist, setWishlist] = useState<string[]>([]);
@@ -173,51 +158,12 @@ export const LuminaryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [adminSession, setAdminSession] = useState<AdminSession | null>(null);
   const [adminAuthChecked, setAdminAuthChecked] = useState(false);
 
-  // Load / Save Theme & Currency (per-browser UI preference, not backend data)
+  // The storefront is light-only and INR-only; clear any dark class saved by older versions.
   useEffect(() => {
-    try {
-      const savedTheme = localStorage.getItem('luminary_theme') as 'dark' | 'light';
-      if (savedTheme) setTheme(savedTheme);
-      const savedCurr = localStorage.getItem('luminary_curr') as CurrencyCode;
-      if (savedCurr) setCurrency(savedCurr);
-    } catch (e) {}
+    document.documentElement.classList.remove('dark');
   }, []);
 
-  useEffect(() => {
-    const root = document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-    try {
-      localStorage.setItem('luminary_theme', theme);
-    } catch (e) {}
-  }, [theme]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('luminary_curr', currency);
-    } catch (e) {}
-  }, [currency]);
-
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
-  };
-
-  const formatPrice = (amountInINR: number): string => {
-    const curr = CURRENCY_RATES[currency];
-    const converted = amountInINR * curr.rate;
-    if (currency === 'INR') {
-      return `₹${Math.round(converted).toLocaleString()}`;
-    } else if (currency === 'USD') {
-      return `$${converted.toFixed(2)}`;
-    } else if (currency === 'EUR') {
-      return `€${converted.toFixed(2)}`;
-    } else {
-      return `د.إ ${converted.toFixed(2)}`;
-    }
-  };
+  const formatPrice = (amountInINR: number): string => `₹${Math.round(amountInINR).toLocaleString('en-IN')}`;
 
   // Initial data load from the backend
   useEffect(() => {
@@ -536,10 +482,6 @@ export const LuminaryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   return (
     <LuminaryContext.Provider
       value={{
-        theme,
-        toggleTheme,
-        currency,
-        setCurrency,
         formatPrice,
         products,
         cart,
