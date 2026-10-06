@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import crypto from 'crypto';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/models';
 import { ADMIN_COOKIE_NAME, verifyAdminToken } from '@/lib/auth';
 import { PrintButton } from '@/components/invoice/PrintButton';
 
@@ -31,14 +31,15 @@ function tokensMatch(a: string | null | undefined, b: string | undefined): boole
 }
 
 export default async function InvoicePage({ params, searchParams }: { params: { id: string }; searchParams: { t?: string } }) {
-  const order = await prisma.order.findUnique({ where: { id: decodeURIComponent(params.id) } });
+  const { Order, SiteSettings } = await db();
+  const order = await Order.findById(decodeURIComponent(params.id));
   if (!order) notFound();
 
   const adminToken = cookies().get(ADMIN_COOKIE_NAME)?.value;
   const isAdmin = !!(adminToken && verifyAdminToken(adminToken));
   if (!isAdmin && !tokensMatch(order.accessToken, searchParams.t)) notFound();
 
-  const settings = await prisma.siteSettings.findUnique({ where: { id: 'singleton' } });
+  const settings = await SiteSettings.findById('singleton').lean();
   const seller = settings?.legalName || settings?.websiteName || 'Luminary';
   const items = (Array.isArray(order.items) ? order.items : []) as unknown as InvoiceItem[];
   const interState = order.igst > 0;
