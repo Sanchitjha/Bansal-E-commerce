@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { Playfair_Display, Poppins } from 'next/font/google';
 import './globals.css';
 import { LuminaryProvider } from '@/context/LuminaryContext';
+import { getCatalog } from '@/lib/data';
+import { siteUrl } from '@/lib/site';
 
 const playfair = Playfair_Display({
   subsets: ['latin'],
@@ -17,7 +19,11 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: 'Luminary | Fragrances, Ayurvedic Care & Lifestyle Gadgets',
+  metadataBase: new URL(siteUrl()),
+  title: {
+    default: 'Luminary | Fragrances, Ayurvedic Care & Lifestyle Gadgets',
+    template: '%s | Luminary',
+  },
   description:
     'Shop artisanal perfumes, authentic Ayurvedic care like Kumkumadi serum, and smart diffusers. Free delivery above ₹999, COD available and bulk pricing across India.',
   keywords: [
@@ -29,25 +35,27 @@ export const metadata: Metadata = {
     'wholesale perfumes',
     'smart aroma diffuser',
   ],
+  alternates: { canonical: '/' },
   openGraph: {
     title: 'Luminary | Fragrance, Ayurveda & Lifestyle',
     description: 'Fragrance • Ayurveda • Lifestyle. Premium products with bulk pricing across India.',
-    url: 'https://luminaryfragrance.com',
     siteName: 'Luminary',
     locale: 'en_IN',
     type: 'website',
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const catalog = await getCatalog();
+
   return (
     <html lang="en" className={`${playfair.variable} ${poppins.variable}`}>
       <body className="bg-brand-cream text-slate-900 antialiased selection:bg-brand-orange-500 selection:text-white">
-        <LuminaryProvider>{children}</LuminaryProvider>
+        <LuminaryProvider initialData={catalog}>{children}</LuminaryProvider>
       </body>
     </html>
   );
