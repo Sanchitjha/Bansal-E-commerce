@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/models';
 import { razorpayConfigured } from '@/lib/payments';
 import { serverError } from '@/lib/api-helpers';
 
@@ -8,7 +8,8 @@ export const dynamic = 'force-dynamic';
 /** Tells the checkout which payment options are really available. */
 export async function GET() {
   try {
-    const settings = await prisma.siteSettings.findUnique({ where: { id: 'singleton' } });
+    const { SiteSettings } = await db();
+    const settings = await SiteSettings.findById('singleton').lean();
     return NextResponse.json({
       online: razorpayConfigured(),
       cod: settings ? settings.codEnabled : true,
