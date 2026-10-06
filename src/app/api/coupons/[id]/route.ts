@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { notFound, requireAdmin, serverError, unauthorized } from '@/lib/api-helpers';
+import { badRequest, notFound, requireAdmin, serverError, unauthorized } from '@/lib/api-helpers';
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const admin = requireAdmin(request);
@@ -12,10 +12,23 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (!existing) return notFound('Coupon not found');
 
     const body = await request.json();
-    const { id: _ignored, code, ...rest } = body;
+    const type = body.type === 'flat' || body.type === 'percentage' ? body.type : existing.type;
+    const value = Number(body.value);
+    if (!(value > 0) || (type === 'percentage' && value > 100)) return badRequest('Discount value is not valid.');
+
+    // The admin form always sends the full coupon, so a missing optional field means "clear it".
     const coupon = await prisma.coupon.update({
       where: { id },
-      data: { ...rest, code: code ? String(code).trim().toUpperCase() : existing.code },
+      data: {
+        code: body.code ? String(body.code).trim().toUpperCase() : existing.code,
+        type,
+        value,
+        minOrderValue: Math.max(0, Number(body.minOrderValue) || 0),
+        maxDiscount: body.maxDiscount ? Number(body.maxDiscount) : null,
+        categorySpecific: body.categorySpecific || null,
+        firstOrderOnly: !!body.firstOrderOnly,
+        isActive: body.isActive ?? existing.isActive,
+      },
     });
 
     await prisma.activityLog.create({
@@ -24,6 +37,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(coupon);
   } catch (err) {
+    if ((err as { code?: string })?.code === 'P2002') return badRequest('A coupon with that code already exists.');
     return serverError(err);
   }
 }
