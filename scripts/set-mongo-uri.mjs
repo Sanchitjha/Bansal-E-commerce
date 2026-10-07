@@ -50,8 +50,12 @@ if (!found) {
 }
 const [, user, rest] = found;
 
-const password = await askHidden(`Atlas password for "${user}" (typing is hidden): `);
-if (!password) {
+// `--vercel-only` reuses the password already saved in .env.local and only (re)sends it to Vercel.
+const vercelOnly = process.argv.includes('--vercel-only');
+const savedPassword = decodeURIComponent(env.match(/^MONGODB_URI=mongodb\+srv:\/\/[^:@\s]+:([^@\s]*)@/m)[1]);
+
+const password = vercelOnly ? savedPassword : await askHidden(`Atlas password for "${user}" (typing is hidden): `);
+if (!password || password === 'REPLACE_WITH_PASSWORD') {
   console.error('No password entered. Run the command again and paste the password.');
   process.exit(1);
 }
@@ -59,8 +63,12 @@ if (!password) {
 const uri = `mongodb+srv://${user}:${encodeURIComponent(password)}@${rest}`;
 const redact = (text) => String(text).split(password).join('***').split(encodeURIComponent(password)).join('***');
 
-fs.writeFileSync(ENV_FILE, env.replace(/^MONGODB_URI=.*$/m, () => `MONGODB_URI=${uri}`));
-console.log(`1/3  Saved MONGODB_URI in ${ENV_FILE}`);
+if (vercelOnly) {
+  console.log(`1/3  Using the password already saved in ${ENV_FILE}`);
+} else {
+  fs.writeFileSync(ENV_FILE, env.replace(/^MONGODB_URI=.*$/m, () => `MONGODB_URI=${uri}`));
+  console.log(`1/3  Saved MONGODB_URI in ${ENV_FILE}`);
+}
 
 try {
   await mongoose.connect(uri, { serverSelectionTimeoutMS: 20000 });
@@ -80,9 +88,13 @@ const add = (extra) =>
     shell: true,
   });
 let result = add(['--sensitive']);
+const firstTry = redact(`${result.stderr || ''}${result.stdout || ''}`).trim();
 if (result.status !== 0) result = add([]);
 if (result.status !== 0) {
-  console.error('3/3  Could not save it on Vercel:', redact(result.stderr || result.stdout).trim());
+  console.error('3/3  Could not save it on Vercel. Vercel said:');
+  console.error(redact(`${result.stderr || ''}${result.stdout || ''}`).trim() || '(no message)');
+  if (firstTry) console.error('\nFirst attempt said:\n' + firstTry);
+  console.error('\nIf it asks you to log in, run "npx vercel login" first, then run this script again with --vercel-only.');
   process.exit(1);
 }
 console.log('3/3  Saved MONGODB_URI on Vercel (production)');
