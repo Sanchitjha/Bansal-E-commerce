@@ -16,7 +16,8 @@ export function videoPoster(url: string, width = 800): string | undefined {
   const m = CLOUDINARY_UPLOAD.exec(url);
   if (!m || !m[1].includes('/video/')) return undefined;
   const path = m[2].replace(/\.[a-z0-9]+$/i, '');
-  return `${m[1]}so_0,f_jpg,q_auto,c_limit,w_${width}/${path}.jpg`;
+  // One second in, because many clips start on a black frame.
+  return `${m[1]}so_1,f_jpg,q_auto,c_limit,w_${width}/${path}.jpg`;
 }
 
 export const isCloudinaryUrl = (url: string) => CLOUDINARY_UPLOAD.test(url);
