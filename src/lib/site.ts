@@ -6,3 +6,8 @@ export function siteUrl(): string {
   if (vercelProd) return `https://${vercelProd}`;
   return 'http://localhost:3000';
 }
+
+/** Turns a site-relative path such as /products/a.jpg into a full link; full links pass through unchanged. */
+export function absoluteUrl(url: string): string {
+  return /^https?:\/\//i.test(url) ? url : `${siteUrl()}${url.startsWith('/') ? '' : '/'}${url}`;
+}

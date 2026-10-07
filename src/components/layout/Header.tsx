@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Search, ShoppingBag, Truck, User, Menu, X, ChevronDown, Leaf } from 'lucide-react';
+import { Search, ShoppingBag, Truck, User, Menu, X, ChevronDown } from 'lucide-react';
 import { useLuminary } from '@/context/LuminaryContext';
 import { CategoryType } from '@/types';
 
@@ -79,16 +79,8 @@ export const Header: React.FC<HeaderProps> = ({
             {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
 
-          <button onClick={() => goToCategory('all')} className="flex items-center gap-2.5" aria-label="Luminary home">
-            <span className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-brand-orange-500 flex items-center justify-center text-white shadow-sm">
-              <Leaf className="w-5 h-5" />
-            </span>
-            <span className="flex flex-col text-left leading-none">
-              <span className="text-xl sm:text-2xl font-bold tracking-tight text-brand-green-800">Luminary</span>
-              <span className="hidden sm:block text-[9px] font-semibold tracking-[0.18em] uppercase text-brand-orange-500 mt-1">
-                Fragrance · Ayurveda · Lifestyle
-              </span>
-            </span>
+          <button onClick={() => goToCategory('all')} className="flex items-center" aria-label="Luminary home">
+            <img src="/logo.png" alt="Luminary Fragrance" className="h-12 sm:h-14 w-auto" />
           </button>
         </div>
 

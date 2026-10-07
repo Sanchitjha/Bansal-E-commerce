@@ -25,9 +25,9 @@ export const HeroBannerSlider: React.FC<HeroBannerSliderProps> = ({ onSelectProd
   }, [activeBanners.length]);
 
   const totalReviews = products.reduce((sum, p) => sum + p.reviewsCount, 0);
-  const avgRating = products.length
-    ? (products.reduce((sum, p) => sum + p.rating, 0) / products.length).toFixed(1)
-    : '0.0';
+  // Products with no reviews yet would only drag the average down, so they are left out.
+  const reviewed = products.filter((p) => p.reviewsCount > 0 && p.rating > 0);
+  const avgRating = reviewed.length ? (reviewed.reduce((sum, p) => sum + p.rating, 0) / reviewed.length).toFixed(1) : '0.0';
 
   const banner = activeBanners[activeSlide] || activeBanners[0];
   const go = (dir: 1 | -1) => setActiveSlide((prev) => (prev + dir + activeBanners.length) % activeBanners.length);

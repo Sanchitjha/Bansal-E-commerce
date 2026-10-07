@@ -25,12 +25,13 @@ export const metadata: Metadata = {
     template: '%s | Luminary',
   },
   description:
-    'Shop artisanal perfumes, authentic Ayurvedic care like Kumkumadi serum, and smart diffusers. Free delivery above ₹999, COD available and bulk pricing across India.',
+    'Shop Luminary Fragrance eau de parfum, attars and perfume gift sets, plus Ayurvedic care like Safed Musli and smart diffusers. Free delivery above ₹999, COD available and bulk pricing across India.',
   keywords: [
     'luminary fragrance',
-    'perfume india',
+    'eau de parfum india',
+    'perfume gift set',
     'attar oils',
-    'kumkumadi serum',
+    'safed musli',
     'ayurvedic products online',
     'wholesale perfumes',
     'smart aroma diffuser',

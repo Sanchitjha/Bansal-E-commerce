@@ -25,7 +25,7 @@ export const BulkQuoteModal: React.FC<BulkQuoteModalProps> = ({
     company: '',
     mobile: '',
     email: '',
-    productName: preSelectedProduct ? preSelectedProduct.name : products[0]?.name || 'Luminary Royal Imperial Oud EDP',
+    productName: preSelectedProduct ? preSelectedProduct.name : products[0]?.name || 'Luminary Fragrance Land Eau de Parfum',
     quantity: 50,
     expectedDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     message: '',

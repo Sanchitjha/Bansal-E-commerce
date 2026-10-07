@@ -4,6 +4,8 @@ import { serverError } from '@/lib/api-helpers';
 import { canonicalState } from '@/lib/india';
 import { estimateDelivery, isPincodeBlocked, lookupPincode } from '@/lib/pincode';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ code: string }> }) {
   try {
     const { code } = await params;

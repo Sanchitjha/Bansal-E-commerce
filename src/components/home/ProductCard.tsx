@@ -40,7 +40,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView, 
       onClick={() => onQuickView(product)}
       className="group bg-white rounded-2xl border border-stone-200 hover:border-brand-green-600/40 hover:shadow-lg transition overflow-hidden flex flex-col cursor-pointer"
     >
-      <div className="relative aspect-[4/3] bg-stone-100 overflow-hidden">
+      <div className="relative aspect-square bg-stone-100 overflow-hidden">
         <img
           src={optimizeImage(product.images[0], 600)}
           alt={product.name}
@@ -112,14 +112,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView, 
         </h3>
         <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">{product.shortDescription}</p>
 
-        <div className="flex items-center gap-1 text-xs">
-          <span className="flex text-amber-500">
-            {[1, 2, 3, 4, 5].map((s) => (
-              <Star key={s} className={`w-3.5 h-3.5 ${s <= Math.round(product.rating) ? 'fill-current' : 'text-stone-300'}`} />
-            ))}
-          </span>
-          <span className="text-slate-500">({product.reviewsCount.toLocaleString('en-IN')})</span>
-        </div>
+        {product.reviewsCount > 0 ? (
+          <div className="flex items-center gap-1 text-xs">
+            <span className="flex text-amber-500">
+              {[1, 2, 3, 4, 5].map((s) => (
+                <Star key={s} className={`w-3.5 h-3.5 ${s <= Math.round(product.rating) ? 'fill-current' : 'text-stone-300'}`} />
+              ))}
+            </span>
+            <span className="text-slate-500">({product.reviewsCount.toLocaleString('en-IN')})</span>
+          </div>
+        ) : (
+          <div className="text-xs text-slate-400">No reviews yet</div>
+        )}
 
         <div className="mt-auto pt-2">
           <div className="flex items-baseline gap-2">

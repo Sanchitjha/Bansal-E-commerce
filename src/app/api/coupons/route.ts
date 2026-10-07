@@ -4,6 +4,8 @@ import { isDuplicateKey } from '@/lib/db';
 import { badRequest, requireAdmin, serverError, unauthorized } from '@/lib/api-helpers';
 import { CATEGORY_TYPES, COUPON_TYPES, isOneOf } from '@/lib/validators';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   // Codes are checked on the server at checkout, so the list is never needed by customers.
   if (!requireAdmin(request)) return unauthorized();

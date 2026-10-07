@@ -4,6 +4,8 @@ import { db } from '@/lib/models';
 import { withTransaction } from '@/lib/db';
 import { badRequest, requireAdmin, serverError, unauthorized } from '@/lib/api-helpers';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const admin = requireAdmin(request);

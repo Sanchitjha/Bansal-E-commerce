@@ -3,6 +3,8 @@ import { db } from '@/lib/models';
 import { attachCartCookie, getExistingCartSessionId, getOrCreateCartSession } from '@/lib/cart-session';
 import { badRequest, notFound, serverError } from '@/lib/api-helpers';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const sessionId = await getExistingCartSessionId(request);

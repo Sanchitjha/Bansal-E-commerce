@@ -5,6 +5,8 @@ import { isDuplicateKey } from '@/lib/db';
 import { badRequest, notFound, requireAdmin, serverError, unauthorized } from '@/lib/api-helpers';
 import { parseProductInput } from '@/lib/product-input';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;

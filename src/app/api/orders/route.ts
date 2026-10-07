@@ -14,6 +14,8 @@ import { createRazorpayOrder, razorpayConfigured, razorpayKeyId } from '@/lib/pa
 import { isPincodeBlocked } from '@/lib/pincode';
 import { PAYMENT_METHODS, isOneOf } from '@/lib/validators';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   const admin = requireAdmin(request);
   if (!admin) return unauthorized();

@@ -3,6 +3,8 @@ import { db } from '@/lib/models';
 import { badRequest, requireAdmin, serverError, unauthorized } from '@/lib/api-helpers';
 import { isValidEmail, normalizeIndianMobile } from '@/lib/india';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   const admin = requireAdmin(request);
   if (!admin) return unauthorized();

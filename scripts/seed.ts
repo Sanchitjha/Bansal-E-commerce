@@ -35,7 +35,7 @@ const DEMO_REVIEWS = [
     location: 'Udaipur, RJ',
     rating: 5,
     title: 'Beautiful scent and it lasts',
-    content: 'The Royal Imperial Oud EDP is lovely. The oud and rose blend stays on for a full day and the glass packaging is gorgeous.',
+    content: 'The Fragrance Land EDP is lovely. The scent stays on for a full day and the gold-capped glass bottle looks gorgeous.',
     date: new Date('2026-09-20'),
   },
   {
@@ -55,7 +55,7 @@ const DEMO_REVIEWS = [
     location: 'Chennai, TN',
     rating: 5,
     title: 'Perfect for corporate gifting',
-    content: 'We ordered a large batch of the Velvet Rose gift sets for a corporate event. Delivery was on time and the packaging looked premium.',
+    content: 'We ordered a large batch of the Luminary gift sets for a corporate event. Delivery was on time and the packaging looked premium.',
     date: new Date('2026-09-24'),
   },
 ];
@@ -78,7 +78,7 @@ async function main() {
   const products = INITIAL_PRODUCTS.map(({ id, createdAt, updatedAt, ...rest }) => ({
     _id: id,
     ...rest,
-    videos: [],
+    videos: rest.videos ?? [],
     createdAt: new Date(createdAt),
     updatedAt: new Date(updatedAt),
   }));

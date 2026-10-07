@@ -9,6 +9,8 @@ import { sendOrderStatusEmail } from '@/lib/order-notify';
 const NOTIFY_STATUSES = ['Shipped', 'Out for Delivery', 'Delivered', 'Cancelled', 'Refunded'];
 const STOCK_RELEASED = ['Cancelled', 'Returned', 'Refunded'];
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const admin = requireAdmin(request);
   if (!admin) return unauthorized();

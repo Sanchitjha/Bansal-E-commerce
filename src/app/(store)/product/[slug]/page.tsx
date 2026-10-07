@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ProductPageView } from '@/components/product/ProductPageView';
 import { getProductBySlug } from '@/lib/data';
-import { siteUrl } from '@/lib/site';
+import { absoluteUrl, siteUrl } from '@/lib/site';
 
 export const revalidate = 300;
 
@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     title,
     description,
     alternates: { canonical: `/product/${product.urlSlug}` },
-    openGraph: { title, description, type: 'website', images: product.images.slice(0, 1) },
+    openGraph: { title, description, type: 'website', images: product.images.slice(0, 1).map(absoluteUrl) },
   };
 }
 
@@ -30,7 +30,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
     '@type': 'Product',
     name: product.name,
     description: product.shortDescription,
-    image: product.images,
+    image: product.images.map(absoluteUrl),
     sku: product.sku,
     brand: { '@type': 'Brand', name: product.brand },
     ...(product.reviewsCount > 0

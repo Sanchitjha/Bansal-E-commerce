@@ -102,7 +102,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
           {filteredProducts.length === 0 ? (
             <div className="text-center py-12 text-slate-500">
               <p className="font-semibold text-slate-800">No products match your search criteria.</p>
-              <p className="text-xs mt-1">Try searching for 'Oud', 'Kumkumadi', or 'Attar'</p>
+              <p className="text-xs mt-1">Try searching for 'Pure Extract', 'Gift set', or 'Attar'</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

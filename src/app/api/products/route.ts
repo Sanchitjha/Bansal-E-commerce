@@ -8,6 +8,8 @@ import { CATEGORY_TYPES, isOneOf } from '@/lib/validators';
 
 const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const admin = requireAdmin(request);

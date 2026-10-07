@@ -5,6 +5,8 @@ import { badRequest, serverError, unauthorized } from '@/lib/api-helpers';
 import { normalizeIndianMobile } from '@/lib/india';
 import { newAccessToken } from '@/lib/orders';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   const session = getCustomerFromRequest(request);
   if (!session) return unauthorized();

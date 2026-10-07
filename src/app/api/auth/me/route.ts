@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminFromRequest } from '@/lib/auth';
 import { unauthorized } from '@/lib/api-helpers';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   const admin = getAdminFromRequest(request);
   if (!admin) return unauthorized();

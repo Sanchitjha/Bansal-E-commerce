@@ -49,7 +49,7 @@ export const ProductPageView: React.FC<{ product: Product }> = ({ product: initi
         <div className="space-y-3">
           <div className="aspect-square rounded-2xl overflow-hidden bg-stone-100">
             {active.type === 'video' ? (
-              <video key={active.url} src={active.url} poster={videoPoster(active.url, 900)} controls playsInline preload="metadata" className="w-full h-full object-contain bg-black" />
+              <video key={active.url} src={active.url} poster={videoPoster(active.url, 900) ?? optimizeImage(product.images[0], 900)} controls playsInline preload="metadata" className="w-full h-full object-contain bg-black" />
             ) : (
               <img src={optimizeImage(active.url || product.images[0], 900)} alt={product.name} className="w-full h-full object-cover" />
             )}
@@ -72,7 +72,7 @@ export const ProductPageView: React.FC<{ product: Product }> = ({ product: initi
                   aria-label="Play product video"
                   className={`relative w-16 h-16 rounded-lg overflow-hidden border-2 shrink-0 bg-slate-800 ${active.url === v ? 'border-brand-green-600' : 'border-transparent opacity-80 hover:opacity-100'}`}
                 >
-                  {videoPoster(v, 160) && <img src={videoPoster(v, 160)} alt="" className="w-full h-full object-cover" />}
+                  <img src={videoPoster(v, 160) ?? optimizeImage(product.images[0], 160)} alt="" className="w-full h-full object-cover" />
                   <PlayCircle className="absolute inset-0 m-auto w-6 h-6 text-white drop-shadow" />
                 </button>
               ))}
@@ -86,16 +86,20 @@ export const ProductPageView: React.FC<{ product: Product }> = ({ product: initi
           </div>
           <h1 className="text-3xl font-bold text-slate-900 leading-tight">{product.name}</h1>
 
-          <div className="flex items-center gap-2 text-sm">
-            <span className="flex text-amber-500">
-              {[1, 2, 3, 4, 5].map((s) => (
-                <Star key={s} className={`w-4 h-4 ${s <= Math.round(product.rating) ? 'fill-current' : 'text-stone-300'}`} />
-              ))}
-            </span>
-            <span className="text-slate-500">
-              {product.rating} ({product.reviewsCount.toLocaleString('en-IN')} reviews)
-            </span>
-          </div>
+          {product.reviewsCount > 0 ? (
+            <div className="flex items-center gap-2 text-sm">
+              <span className="flex text-amber-500">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <Star key={s} className={`w-4 h-4 ${s <= Math.round(product.rating) ? 'fill-current' : 'text-stone-300'}`} />
+                ))}
+              </span>
+              <span className="text-slate-500">
+                {product.rating} ({product.reviewsCount.toLocaleString('en-IN')} reviews)
+              </span>
+            </div>
+          ) : (
+            <div className="text-sm text-slate-500">No reviews yet</div>
+          )}
 
           <p className="text-slate-600 leading-relaxed">{product.shortDescription}</p>
 

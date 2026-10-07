@@ -79,7 +79,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           <div className="md:col-span-6 space-y-4">
             <div className="relative aspect-square rounded-2xl overflow-hidden bg-stone-50 border border-stone-200">
               {selectedVideo ? (
-                <video key={selectedVideo} src={selectedVideo} poster={videoPoster(selectedVideo, 800)} controls playsInline preload="metadata" className="w-full h-full object-contain bg-black" />
+                <video key={selectedVideo} src={selectedVideo} poster={videoPoster(selectedVideo, 800) ?? optimizeImage(product.images[0], 800)} controls playsInline preload="metadata" className="w-full h-full object-contain bg-black" />
               ) : (
                 <img
                   src={optimizeImage(selectedImage || product.images[0], 800)}
@@ -127,7 +127,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                       selectedVideo === v ? 'border-brand-green-600 scale-105' : 'border-stone-200 opacity-80 hover:opacity-100'
                     }`}
                   >
-                    {videoPoster(v, 160) && <img src={videoPoster(v, 160)} alt="" className="w-full h-full object-cover" />}
+                    <img src={videoPoster(v, 160) ?? optimizeImage(product.images[0], 160)} alt="" className="w-full h-full object-cover" />
                     <PlayCircle className="absolute inset-0 m-auto w-6 h-6 text-white drop-shadow" />
                   </button>
                 ))}
@@ -154,11 +154,15 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 <span className="uppercase font-semibold text-brand-green-700 tracking-widest">
                   {product.brand} • {product.subcategory || product.category}
                 </span>
-                <div className="flex items-center gap-1 text-amber-600 font-bold">
-                  <Star className="w-4 h-4 fill-current" />
-                  <span>{product.rating}</span>
-                  <span className="text-slate-500 font-normal">({product.reviewsCount} reviews)</span>
-                </div>
+                {product.reviewsCount > 0 ? (
+                  <div className="flex items-center gap-1 text-amber-600 font-bold">
+                    <Star className="w-4 h-4 fill-current" />
+                    <span>{product.rating}</span>
+                    <span className="text-slate-500 font-normal">({product.reviewsCount} reviews)</span>
+                  </div>
+                ) : (
+                  <span className="text-slate-500">No reviews yet</span>
+                )}
               </div>
 
               <h2 className=" text-2xl font-bold text-slate-900 mt-2">

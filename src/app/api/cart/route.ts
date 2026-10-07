@@ -5,6 +5,8 @@ import { addCartItem, clearCartItems, getCartItemQuantity, removeCartItem, setCa
 import { badRequest, notFound, serverError } from '@/lib/api-helpers';
 import { buildCartPayload } from '@/lib/cart-response';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const sessionId = await getExistingCartSessionId(request);

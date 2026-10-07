@@ -9,6 +9,8 @@ import { newAccessToken } from '@/lib/orders';
  * Guest order lookup. Needs BOTH the order id and the phone number used at checkout, so one value
  * alone can't be used to browse other customers' orders. Repeated misses lock the caller out briefly.
  */
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
