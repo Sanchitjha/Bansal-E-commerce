@@ -99,7 +99,7 @@ interface LuminaryContextType {
   activeCoupon: Coupon | null;
   activeCategoryFilter: CategoryType | 'all';
   setActiveCategoryFilter: (cat: CategoryType | 'all') => void;
-  paymentOptions: { online: boolean; cod: boolean };
+  paymentOptions: { online: boolean; cod: boolean; email: boolean };
 
   // Feedback
   toast: { id: number; message: string; type: ToastType } | null;
@@ -207,7 +207,7 @@ export const LuminaryProvider: React.FC<{ children: React.ReactNode; initialData
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [activeCoupon, setActiveCoupon] = useState<Coupon | null>(null);
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<CategoryType | 'all'>('all');
-  const [paymentOptions, setPaymentOptions] = useState({ online: false, cod: true });
+  const [paymentOptions, setPaymentOptions] = useState({ online: false, cod: true, email: false });
   const [adminSession, setAdminSession] = useState<AdminSession | null>(null);
   const [adminAuthChecked, setAdminAuthChecked] = useState(false);
   const [customer, setCustomer] = useState<CustomerProfile | null>(null);
@@ -255,7 +255,7 @@ export const LuminaryProvider: React.FC<{ children: React.ReactNode; initialData
     apiRequest<Product[]>('/api/products').then(setProducts).catch(() => {});
     apiRequest<HeroBanner[]>('/api/hero-banners').then(setHeroBanners).catch(() => {});
     apiRequest<SiteSettings>('/api/settings').then((s) => s && setSettings(s)).catch(() => {});
-    apiRequest<{ online: boolean; cod: boolean }>('/api/payments/config').then(setPaymentOptions).catch(() => {});
+    apiRequest<{ online: boolean; cod: boolean; email: boolean }>('/api/payments/config').then(setPaymentOptions).catch(() => {});
     refreshCart();
     apiRequest<{ productIds: string[] }>('/api/wishlist').then((data) => setWishlist(data.productIds || [])).catch(() => {});
     refreshCustomer();

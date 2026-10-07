@@ -42,7 +42,7 @@ export const useShell = (): ShellActions => {
 
 /** Header, footer and every popup, shared by the home page, product pages and policy pages. */
 export const StoreShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { formatPrice } = useLuminary();
+  const { formatPrice, paymentOptions } = useLuminary();
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -160,7 +160,7 @@ export const StoreShell: React.FC<{ children: React.ReactNode }> = ({ children }
               <p className="text-sm text-slate-600">
                 Thank you for shopping with Luminary. Your order ID is{' '}
                 <strong className="font-mono text-brand-orange-600">{successOrder.id}</strong>. Save it to track your order with the mobile number you
-                used. A confirmation has been emailed to {successOrder.email}.
+                used.{paymentOptions.email && <> A confirmation has been emailed to {successOrder.email}.</>}
               </p>
 
               <div className="p-4 rounded-xl bg-stone-50 border border-stone-200 text-sm space-y-1 text-slate-600">
