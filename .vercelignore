@@ -1,0 +1,9 @@
+# Original photos, video and logos live in the project folder for reference; the site uses the optimised copies in public/.
+/WhatsApp Image*
+/WhatsApp Video*
+/page1 logo.png
+/thumbnail logo.png
+/.agents
+/.windsurf
+# Product photos and video now live on Cloudinary (luminary/products, luminary/videos); the local copies are kept in git only as a backup.
+/public/products
