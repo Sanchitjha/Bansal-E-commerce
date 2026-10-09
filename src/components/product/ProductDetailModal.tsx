@@ -6,7 +6,6 @@ import {
   Star,
   ShoppingBag,
   Heart,
-  MessageCircle,
   Truck,
   ShieldCheck,
   RefreshCw,
@@ -19,6 +18,7 @@ import {
 import { Product } from '@/types';
 import { optimizeImage, videoPoster } from '@/lib/media';
 import { useLuminary } from '@/context/LuminaryContext';
+import { WhatsAppIcon } from '@/components/ui/WhatsAppIcon';
 
 interface ProductDetailModalProps {
   product: Product | null;
@@ -318,7 +318,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   onClick={handleWhatsAppChat}
                   className="py-2 px-3 rounded-lg bg-emerald-600/20 border border-emerald-500/30 text-emerald-600 hover:bg-emerald-600/30 transition flex items-center justify-center gap-1.5 font-semibold text-[11px]"
                 >
-                  <MessageCircle className="w-3.5 h-3.5" />
+                  <WhatsAppIcon className="w-3.5 h-3.5" />
                   <span>Chat on WhatsApp</span>
                 </button>
 
