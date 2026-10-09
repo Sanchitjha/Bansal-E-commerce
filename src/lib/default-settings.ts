@@ -11,7 +11,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   freeShippingThreshold: 999,
   defaultShippingCharge: 99,
   lowStockAlertThreshold: 10,
-  sellerState: 'Maharashtra',
+  sellerState: 'Punjab',
   gstin: '',
   legalName: '',
   codEnabled: true,
