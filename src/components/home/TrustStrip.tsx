@@ -1,38 +1,33 @@
 'use client';
 
 import React from 'react';
-import { Leaf, Truck, Lock } from 'lucide-react';
+import { Leaf, Truck, Lock, FileText } from 'lucide-react';
 import { useLuminary } from '@/context/LuminaryContext';
 
+/** One calm row of reasons to buy, shown once under the banner. */
 export const TrustStrip: React.FC = () => {
   const { settings } = useLuminary();
 
   const items = [
-    { icon: Leaf, title: 'Authentic & Pure', sub: 'Quality-checked ingredients' },
-    { icon: Truck, title: 'Free Delivery', sub: `On all orders above ₹${settings.freeShippingThreshold.toLocaleString('en-IN')}` },
-    { icon: Lock, title: 'Secure Payments', sub: 'UPI, cards & COD available' },
+    { icon: Leaf, title: 'Authentic & pure', sub: 'Quality-checked products' },
+    { icon: Truck, title: 'Free delivery', sub: `On orders above ₹${settings.freeShippingThreshold.toLocaleString('en-IN')}` },
+    { icon: Lock, title: 'Secure payments', sub: 'UPI, cards and cash on delivery' },
+    { icon: FileText, title: 'GST invoice', sub: 'With every order' },
   ];
 
   return (
-    <div className="bg-brand-green-800 text-white overflow-hidden">
-      <div className="flex w-max animate-marquee py-4">
-        {[0, 1].map((dup) => (
-          <div key={dup} className="flex items-center shrink-0" aria-hidden={dup === 1}>
-            {[...items, ...items, ...items].map((item, i) => {
-              const Icon = item.icon;
-              return (
-                <div key={i} className="flex items-center gap-3 px-8 border-r border-white/20">
-                  <Icon className="w-6 h-6 text-amber-300 shrink-0" />
-                  <div className="leading-tight">
-                    <div className="text-sm font-semibold whitespace-nowrap">{item.title}</div>
-                    <div className="text-[11px] text-white/70 whitespace-nowrap">{item.sub}</div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+    <div className="bg-white border-b border-stone-200">
+      <ul className="max-w-[1400px] mx-auto px-4 sm:px-6 py-5 grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-4">
+        {items.map(({ icon: Icon, title, sub }) => (
+          <li key={title} className="flex items-center gap-3 lg:justify-center">
+            <Icon className="w-6 h-6 text-brand-green-700 shrink-0" />
+            <div className="leading-tight">
+              <div className="text-sm font-semibold text-slate-900">{title}</div>
+              <div className="text-[11px] text-slate-500">{sub}</div>
+            </div>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 };
