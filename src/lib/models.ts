@@ -451,6 +451,30 @@ const loginAttemptSchema = new Schema<ILoginAttempt>(
   options()
 );
 
+export interface IOtpCode {
+  _id: string; // "<purpose>:<email>", so each email has at most one live code per purpose
+  email: string;
+  purpose: 'login' | 'reset';
+  codeHash: string;
+  attempts: number;
+  sentAt: Date;
+  expiresAt: Date;
+}
+// One-time email codes. Only a keyed hash is stored, never the code itself; old rows are removed automatically.
+const otpCodeSchema = new Schema<IOtpCode>(
+  {
+    _id: { type: String },
+    email: { type: String, required: true },
+    purpose: { type: String, required: true },
+    codeHash: { type: String, required: true },
+    attempts: { type: Number, default: 0 },
+    sentAt: { type: Date, default: Date.now },
+    expiresAt: { type: Date, required: true },
+  },
+  options()
+);
+otpCodeSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+
 function register<T>(name: string, schema: Schema<T>): Model<T> {
   return (mongoose.models[name] as Model<T> | undefined) ?? mongoose.model<T>(name, schema);
 }
@@ -469,6 +493,7 @@ const models = {
   SheetSyncLog: register('SheetSyncLog', sheetSyncLogSchema),
   SiteSettings: register('SiteSettings', siteSettingsSchema),
   LoginAttempt: register('LoginAttempt', loginAttemptSchema),
+  OtpCode: register('OtpCode', otpCodeSchema),
 };
 
 /** Connects (once per process) and hands back the models. Always call this instead of importing models directly. */
