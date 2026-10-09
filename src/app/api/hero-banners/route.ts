@@ -39,6 +39,8 @@ export async function PUT(request: NextRequest) {
       priority: i + 1,
       isActive: b.isActive !== false,
       productId: b.productId ? text(b.productId, 60) : null,
+      layout: b.layout === 'split' ? 'split' : 'full',
+      showText: b.showText !== false,
     }));
     if (banners.some((b) => !b.title || !b.imageUrl)) return badRequest('Every banner needs a headline and an image.');
 
