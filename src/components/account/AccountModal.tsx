@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { X, User, LogOut, FileText, Package } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { X, User, LogOut, FileText, Package, ArrowLeft } from 'lucide-react';
 import { useLuminary } from '@/context/LuminaryContext';
 
 interface AccountModalProps {
@@ -12,6 +12,8 @@ interface AccountModalProps {
 const input =
   'w-full px-3.5 py-2.5 text-sm bg-stone-50 border border-stone-200 focus:border-brand-green-600 rounded-xl text-slate-900 placeholder-slate-400 outline-none';
 const label = 'block text-xs font-semibold text-slate-600 mb-1';
+const primaryButton =
+  'w-full py-3 rounded-full bg-brand-orange-500 hover:bg-brand-orange-600 text-white font-bold text-sm transition disabled:opacity-60';
 
 const STATUS_STYLE: Record<string, string> = {
   Delivered: 'bg-emerald-100 text-emerald-700',
@@ -20,14 +22,56 @@ const STATUS_STYLE: Record<string, string> = {
   Returned: 'bg-rose-100 text-rose-700',
 };
 
+type Mode = 'login' | 'register' | 'code' | 'reset';
+
 export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose }) => {
-  const { customer, customerOrders, customerLogin, customerRegister, customerLogout, formatPrice } = useLuminary();
-  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const {
+    customer,
+    customerOrders,
+    customerLogin,
+    customerRegister,
+    customerLogout,
+    requestEmailCode,
+    customerLoginWithCode,
+    customerResetPassword,
+    paymentOptions,
+    formatPrice,
+  } = useLuminary();
+  const emailEnabled = paymentOptions.email;
+
+  const [mode, setMode] = useState<Mode>('login');
   const [form, setForm] = useState({ name: '', email: '', phone: '', password: '' });
+  // Email-code flows (sign in with a code, and forgot password) share these.
+  const [step, setStep] = useState<'email' | 'code'>('email');
+  const [code, setCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [cooldown, setCooldown] = useState(0);
+  const [info, setInfo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [cooldown]);
+
   if (!isOpen) return null;
+
+  const goTo = (next: Mode) => {
+    setMode(next);
+    setStep('email');
+    setCode('');
+    setNewPassword('');
+    setCooldown(0);
+    setInfo(null);
+    setError(null);
+  };
+
+  const finish = () => {
+    setForm({ name: '', email: '', phone: '', password: '' });
+    goTo('login');
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,8 +83,37 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose }) =
         : await customerRegister({ name: form.name, email: form.email, phone: form.phone, password: form.password });
     setBusy(false);
     if (!res.success) setError(res.message ?? 'Something went wrong');
-    else setForm({ name: '', email: '', phone: '', password: '' });
+    else finish();
   };
+
+  const sendCode = async () => {
+    setError(null);
+    setInfo(null);
+    setBusy(true);
+    const res = await requestEmailCode(form.email, mode === 'reset' ? 'reset' : 'login');
+    setBusy(false);
+    if (!res.success) {
+      setError(res.message ?? 'Could not send the code');
+      return;
+    }
+    setStep('code');
+    setCooldown(60);
+    setInfo(res.message ?? null);
+  };
+
+  const submitCodeFlow = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (step === 'email') return sendCode();
+    setError(null);
+    setBusy(true);
+    const res =
+      mode === 'reset' ? await customerResetPassword(form.email, code, newPassword) : await customerLoginWithCode(form.email, code);
+    setBusy(false);
+    if (!res.success) setError(res.message ?? 'Something went wrong');
+    else finish();
+  };
+
+  const codeFlow = mode === 'code' || mode === 'reset';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm overflow-y-auto">
@@ -117,6 +190,104 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose }) =
               </ul>
             )}
           </div>
+        ) : codeFlow ? (
+          <form onSubmit={submitCodeFlow} className="p-6 space-y-4">
+            <button
+              type="button"
+              onClick={() => goTo('login')}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-brand-green-700"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" /> Back to sign in
+            </button>
+            <div>
+              <h4 className="text-base font-bold text-slate-900">{mode === 'reset' ? 'Reset your password' : 'Sign in with an email code'}</h4>
+              <p className="text-xs text-slate-500 mt-1">
+                {step === 'email'
+                  ? 'Enter the email of your account and we will send you a 6-digit code.'
+                  : `Enter the 6-digit code we emailed to ${form.email}.`}
+              </p>
+            </div>
+
+            <div>
+              <label className={label}>Email</label>
+              <input
+                required
+                type="email"
+                disabled={step === 'code'}
+                className={`${input} disabled:opacity-60`}
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                autoComplete="email"
+              />
+            </div>
+
+            {step === 'code' && (
+              <>
+                <div>
+                  <label className={label}>6-digit code</label>
+                  <input
+                    required
+                    autoFocus
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={6}
+                    pattern="[0-9]{6}"
+                    placeholder="123456"
+                    className={`${input} tracking-[0.4em] text-center font-mono text-lg`}
+                    value={code}
+                    onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  />
+                </div>
+                {mode === 'reset' && (
+                  <div>
+                    <label className={label}>
+                      New password <span className="font-normal text-slate-400">(min 8 characters)</span>
+                    </label>
+                    <input
+                      required
+                      type="password"
+                      minLength={8}
+                      className={input}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      autoComplete="new-password"
+                    />
+                  </div>
+                )}
+              </>
+            )}
+
+            {info && step === 'code' && <p className="text-xs text-slate-500">{info}</p>}
+            {error && <p className="text-sm text-rose-600 font-medium">{error}</p>}
+
+            <button type="submit" disabled={busy || (step === 'code' && code.length !== 6)} className={primaryButton}>
+              {busy ? 'Please wait...' : step === 'email' ? 'Send code' : mode === 'reset' ? 'Reset password & sign in' : 'Verify & sign in'}
+            </button>
+
+            {step === 'code' && (
+              <div className="flex items-center justify-between text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStep('email');
+                    setCode('');
+                    setError(null);
+                  }}
+                  className="text-slate-500 hover:text-brand-green-700"
+                >
+                  Use a different email
+                </button>
+                <button
+                  type="button"
+                  onClick={sendCode}
+                  disabled={cooldown > 0 || busy}
+                  className="text-brand-green-700 disabled:text-slate-400"
+                >
+                  {cooldown > 0 ? `Resend code in ${cooldown}s` : 'Resend code'}
+                </button>
+              </div>
+            )}
+          </form>
         ) : (
           <form onSubmit={submit} className="p-6 space-y-4">
             <div className="grid grid-cols-2 gap-2 p-1 bg-stone-100 rounded-full text-sm font-semibold">
@@ -124,10 +295,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose }) =
                 <button
                   type="button"
                   key={m}
-                  onClick={() => {
-                    setMode(m);
-                    setError(null);
-                  }}
+                  onClick={() => goTo(m)}
                   className={`py-2 rounded-full transition ${mode === m ? 'bg-white shadow text-brand-green-800' : 'text-slate-500'}`}
                 >
                   {m === 'login' ? 'Sign in' : 'Create account'}
@@ -162,7 +330,14 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose }) =
               <input required type="email" className={input} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} autoComplete="email" />
             </div>
             <div>
-              <label className={label}>Password {mode === 'register' && <span className="font-normal text-slate-400">(min 8 characters)</span>}</label>
+              <div className="flex items-center justify-between">
+                <label className={label}>Password {mode === 'register' && <span className="font-normal text-slate-400">(min 8 characters)</span>}</label>
+                {mode === 'login' && emailEnabled && (
+                  <button type="button" onClick={() => goTo('reset')} className="text-xs font-semibold text-brand-green-700 hover:underline -mt-1">
+                    Forgot password?
+                  </button>
+                )}
+              </div>
               <input
                 required
                 type="password"
@@ -176,13 +351,19 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose }) =
 
             {error && <p className="text-sm text-rose-600 font-medium">{error}</p>}
 
-            <button
-              type="submit"
-              disabled={busy}
-              className="w-full py-3 rounded-full bg-brand-orange-500 hover:bg-brand-orange-600 text-white font-bold text-sm transition disabled:opacity-60"
-            >
+            <button type="submit" disabled={busy} className={primaryButton}>
               {busy ? 'Please wait...' : mode === 'login' ? 'Sign in' : 'Create account'}
             </button>
+
+            {mode === 'login' && emailEnabled && (
+              <button
+                type="button"
+                onClick={() => goTo('code')}
+                className="w-full py-3 rounded-full border border-stone-300 hover:border-brand-green-600 text-slate-700 font-semibold text-sm transition"
+              >
+                Sign in with an email code instead
+              </button>
+            )}
             <p className="text-xs text-slate-500 text-center">You can also check out as a guest, without an account.</p>
           </form>
         )}
