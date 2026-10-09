@@ -10,8 +10,14 @@
 import { config } from 'dotenv';
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
-config({ path: '.env.local', override: true });
+// `--local` seeds whatever MONGODB_URI is already set in the shell (a test database) and never the one in .env.local.
+const LOCAL = process.argv.includes('--local');
+config({ path: '.env.local', override: !LOCAL });
 config();
+if (LOCAL && /mongodb.net|mongodb+srv/.test(process.env.MONGODB_URI ?? '')) {
+  console.error('--local refuses to run against a hosted database. Set MONGODB_URI to a local test database first.');
+  process.exit(1);
+}
 
 import { db } from '../src/lib/models';
 import {
