@@ -1,10 +1,11 @@
 import { revalidateTag, unstable_cache } from 'next/cache';
 import { db, plain } from './models';
-import type { HeroBanner, Product, SiteSettings } from '@/types';
+import type { CreatorVideo, HeroBanner, Product, SiteSettings } from '@/types';
 
 export interface Catalog {
   products: Product[];
   heroBanners: HeroBanner[];
+  creatorVideos: CreatorVideo[];
   settings: SiteSettings | null;
 }
 
@@ -28,19 +29,20 @@ async function withRetry<T>(fn: () => Promise<T>, attempts = 4): Promise<T> {
  */
 export const getCatalog = unstable_cache(
   async (): Promise<Catalog> => {
-    const { Product, HeroBanner, SiteSettings } = await db();
-    const [products, heroBanners, settings] = await withRetry(() =>
+    const { Product, HeroBanner, CreatorVideo, SiteSettings } = await db();
+    const [products, heroBanners, creatorVideos, settings] = await withRetry(() =>
       Promise.all([
         Product.find({ status: 'active' }).sort({ priorityOrder: 1, createdAt: -1 }),
         HeroBanner.find({ isActive: true }).sort({ priority: 1 }),
+        CreatorVideo.find({ isActive: true }).sort({ priority: 1 }),
         SiteSettings.findById('singleton'),
       ])
     );
-    return plain<Catalog>({ products, heroBanners, settings });
+    return plain<Catalog>({ products, heroBanners, creatorVideos, settings });
   },
   // Change the version number whenever the catalog is edited outside the admin panel (a script or the
   // database), so a new deploy does not keep serving the previously cached copy.
-  ['storefront-catalog-v4'],
+  ['storefront-catalog-v5'],
   { tags: ['catalog'], revalidate: 300 }
 );
 
