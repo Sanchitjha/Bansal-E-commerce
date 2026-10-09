@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/models';
 import { badRequest, serverError } from '@/lib/api-helpers';
-import { emailConfigured, otpEmail, sendEmail } from '@/lib/email';
+import { customerEmailReady, otpEmail, sendEmail } from '@/lib/email';
 import { isValidEmail } from '@/lib/india';
 import { OTP_RESEND_SECONDS, issueOtp, type OtpPurpose } from '@/lib/otp';
 import { clientIp, lockSecondsRemaining, lockedMessage, recordFailure } from '@/lib/rate-limit';
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
 
     if (purpose !== 'login' && purpose !== 'reset') return badRequest('Unknown request.');
     if (!isValidEmail(email)) return badRequest('Please enter a valid email address.');
-    if (!emailConfigured()) {
+    if (!customerEmailReady()) {
       return NextResponse.json({ error: 'Email codes are not available right now. Please use your password.' }, { status: 503 });
     }
 
