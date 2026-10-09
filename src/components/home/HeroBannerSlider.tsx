@@ -112,7 +112,7 @@ export const HeroBannerSlider: React.FC<HeroBannerSliderProps> = ({ onOpenBulkMo
                     <>
                       <div className="hidden md:block absolute inset-y-0 left-0 w-[68%] bg-gradient-to-r from-white/95 via-white/70 to-transparent" aria-hidden />
                       <div className="md:absolute md:inset-0 md:flex md:items-center bg-[#f6f0e4] md:bg-transparent">
-                        <div className="w-full max-w-[1400px] mx-auto px-5 sm:px-8 lg:px-12 py-7 md:py-0">
+                        <div className="w-full max-w-[1400px] mx-auto px-5 sm:px-8 md:px-20 py-7 md:py-0">
                           <div className="max-w-[520px] flex flex-col gap-4 items-start">
                             {banner.badge && (
                               <span className="px-3 py-1 bg-black text-white text-[11px] font-semibold uppercase tracking-[0.2em]">{banner.badge}</span>
@@ -153,7 +153,7 @@ export const HeroBannerSlider: React.FC<HeroBannerSliderProps> = ({ onOpenBulkMo
           >
             <ChevronRight className="w-5 h-5" />
           </button>
-          <div className="absolute z-20 left-0 right-0 top-[216px] sm:top-[264px] md:top-auto md:bottom-5 flex justify-center gap-2">
+          <div className="absolute z-20 left-1/2 -translate-x-1/2 top-[206px] sm:top-[254px] md:top-auto md:bottom-5 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80">
             {banners.map((b, i) => (
               <button
                 key={b.id}
