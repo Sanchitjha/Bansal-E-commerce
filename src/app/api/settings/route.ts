@@ -17,6 +17,18 @@ export async function GET() {
 
 const text = (v: unknown, max = 300) => String(v ?? '').trim().slice(0, max);
 
+/** An optional web link: empty is fine, anything else must be a real http(s) address. Returns null when invalid. */
+function link(v: unknown): string | null {
+  const value = text(v, 300);
+  if (!value) return '';
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function PUT(request: NextRequest) {
   const admin = requireAdmin(request);
   if (!admin) return unauthorized();
@@ -46,6 +58,13 @@ export async function PUT(request: NextRequest) {
       return badRequest('Blocked pincodes must be 6-digit numbers separated by commas.');
     }
 
+    const instagramUrl = link(body.instagramUrl);
+    const facebookUrl = link(body.facebookUrl);
+    const youtubeUrl = link(body.youtubeUrl);
+    if (instagramUrl === null || facebookUrl === null || youtubeUrl === null) {
+      return badRequest('Social media links must be full web addresses, e.g. https://instagram.com/yourpage');
+    }
+
     const data = {
       websiteName: text(body.websiteName, 80) || 'Luminary',
       logoText: text(body.logoText, 80) || 'Luminary',
@@ -61,6 +80,9 @@ export async function PUT(request: NextRequest) {
       legalName: text(body.legalName, 120),
       codEnabled: !!body.codEnabled,
       blockedPincodes: blockedPincodes.join(','),
+      instagramUrl,
+      facebookUrl,
+      youtubeUrl,
     };
 
     const { SiteSettings, ActivityLog } = await db();
