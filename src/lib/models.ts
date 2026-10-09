@@ -149,6 +149,10 @@ export interface IReview {
   content: string;
   date: Date;
   verified: boolean;
+  /** Pending reviews are held back until the store owner approves them. Reviews saved before this existed count as approved. */
+  status: 'approved' | 'pending';
+  /** The order a verified review was matched to (never shown to visitors). */
+  orderId?: string | null;
 }
 const reviewSchema = new Schema<IReview>(
   {
@@ -160,7 +164,9 @@ const reviewSchema = new Schema<IReview>(
     title: { type: String, required: true },
     content: { type: String, required: true },
     date: { type: Date, default: Date.now },
-    verified: { type: Boolean, default: true },
+    verified: { type: Boolean, default: false },
+    status: { type: String, enum: ['approved', 'pending'], default: 'approved' },
+    orderId: { type: String, default: null },
   },
   options()
 );
@@ -340,6 +346,8 @@ export interface IHeroBanner {
   priority: number;
   isActive: boolean;
   productId?: string | null;
+  layout?: 'full' | 'split';
+  showText?: boolean;
 }
 const heroBannerSchema = new Schema<IHeroBanner>(
   {
@@ -354,8 +362,47 @@ const heroBannerSchema = new Schema<IHeroBanner>(
     priority: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },
     productId: { type: String, default: null },
+    layout: { type: String, enum: ['full', 'split'], default: 'split' },
+    showText: { type: Boolean, default: true },
   },
   options()
+);
+
+export interface ICreatorVideo {
+  _id: string;
+  title: string;
+  creator: string;
+  videoUrl: string;
+  posterUrl: string;
+  productId?: string | null;
+  priority: number;
+  isActive: boolean;
+}
+const creatorVideoSchema = new Schema<ICreatorVideo>(
+  {
+    ...idField,
+    title: { type: String, required: true },
+    creator: { type: String, default: '' },
+    videoUrl: { type: String, required: true },
+    posterUrl: { type: String, default: '' },
+    productId: { type: String, default: null },
+    priority: { type: Number, default: 0 },
+    isActive: { type: Boolean, default: true },
+  },
+  options()
+);
+
+export interface ISubscriber {
+  _id: string; // the email address, lower-case, so one person can only appear once
+  source: string;
+  createdAt: Date;
+}
+const subscriberSchema = new Schema<ISubscriber>(
+  {
+    _id: { type: String },
+    source: { type: String, default: 'footer' },
+  },
+  options({ timestamps: { createdAt: true, updatedAt: false } })
 );
 
 export interface IActivityLog {
@@ -412,6 +459,9 @@ export interface ISiteSettings {
   legalName: string;
   codEnabled: boolean;
   blockedPincodes: string;
+  instagramUrl?: string;
+  facebookUrl?: string;
+  youtubeUrl?: string;
 }
 const siteSettingsSchema = new Schema<ISiteSettings>(
   {
@@ -430,6 +480,9 @@ const siteSettingsSchema = new Schema<ISiteSettings>(
     legalName: { type: String, default: '' },
     codEnabled: { type: Boolean, default: true },
     blockedPincodes: { type: String, default: '' },
+    instagramUrl: { type: String, default: '' },
+    facebookUrl: { type: String, default: '' },
+    youtubeUrl: { type: String, default: '' },
   },
   options()
 );
@@ -494,6 +547,8 @@ const models = {
   SiteSettings: register('SiteSettings', siteSettingsSchema),
   LoginAttempt: register('LoginAttempt', loginAttemptSchema),
   OtpCode: register('OtpCode', otpCodeSchema),
+  CreatorVideo: register('CreatorVideo', creatorVideoSchema),
+  Subscriber: register('Subscriber', subscriberSchema),
 };
 
 /** Connects (once per process) and hands back the models. Always call this instead of importing models directly. */
