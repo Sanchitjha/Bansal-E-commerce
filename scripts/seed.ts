@@ -14,7 +14,7 @@ import mongoose from 'mongoose';
 const LOCAL = process.argv.includes('--local');
 config({ path: '.env.local', override: !LOCAL });
 config();
-if (LOCAL && /mongodb.net|mongodb+srv/.test(process.env.MONGODB_URI ?? '')) {
+if (LOCAL && /mongodb\.net|mongodb\+srv/.test(process.env.MONGODB_URI ?? '')) {
   console.error('--local refuses to run against a hosted database. Set MONGODB_URI to a local test database first.');
   process.exit(1);
 }
