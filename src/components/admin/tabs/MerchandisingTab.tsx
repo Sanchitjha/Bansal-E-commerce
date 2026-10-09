@@ -15,12 +15,14 @@ const blankBanner = (priority: number): BannerDraft => ({
   subtitle: '',
   badge: '',
   discountTag: '',
-  buttonText: 'ORDER NOW',
-  destinationUrl: '/',
+  buttonText: 'SHOP NOW',
+  destinationUrl: '',
   imageUrl: '',
   priority,
   isActive: true,
   productId: undefined,
+  layout: 'full',
+  showText: true,
 });
 
 export const MerchandisingTab: React.FC = () => {
@@ -97,7 +99,8 @@ export const MerchandisingTab: React.FC = () => {
           subtitle: b.subtitle.trim(),
           badge: b.badge.trim(),
           discountTag: b.discountTag.trim(),
-          buttonText: b.buttonText.trim() || 'ORDER NOW',
+          buttonText: b.buttonText.trim() || 'SHOP NOW',
+          destinationUrl: b.destinationUrl.trim(),
           imageUrl: b.imageUrl.trim(),
           priority: i + 1,
           productId: b.productId || undefined,
@@ -201,12 +204,33 @@ export const MerchandisingTab: React.FC = () => {
                     ))}
                   </select>
                 </div>
+                <div>
+                  <label className={labelCls}>Or opens this page on the site</label>
+                  <input className={inputCls} value={b.destinationUrl} onChange={(e) => patch(i, { destinationUrl: e.target.value })} placeholder="/collections/gift-sets" />
+                  <p className="text-[10px] text-slate-500 mt-1">Used when no product is chosen. Leave empty to open the bulk quote form.</p>
+                </div>
+                <div>
+                  <label className={labelCls}>Button text</label>
+                  <input className={inputCls} value={b.buttonText} onChange={(e) => patch(i, { buttonText: e.target.value })} placeholder="SHOP NOW" />
+                </div>
+                <div>
+                  <label className={labelCls}>Layout</label>
+                  <select className={inputCls} value={b.layout ?? 'split'} onChange={(e) => patch(i, { layout: e.target.value as 'full' | 'split' })}>
+                    <option value="full">Full-width picture (bigger, recommended)</option>
+                    <option value="split">Text on the left, small picture on the right</option>
+                  </select>
+                </div>
                 <label className="flex items-center gap-2 text-xs font-semibold text-slate-200 mt-5">
+                  <input type="checkbox" className="accent-gold-400" checked={b.showText !== false} onChange={(e) => patch(i, { showText: e.target.checked })} />
+                  Show headline, offer and button on the picture
+                </label>
+                <label className="flex items-center gap-2 text-xs font-semibold text-slate-200 sm:col-span-2">
                   <input type="checkbox" className="accent-gold-400" checked={b.isActive} onChange={(e) => patch(i, { isActive: e.target.checked })} />
                   Show this banner
                 </label>
                 <div className="sm:col-span-2">
                   <label className={labelCls}>Image *</label>
+                  <p className="text-[10px] text-slate-500 mb-1">For the full-width layout use a wide landscape picture, about 2400 × 900 pixels, with the product on the right side. Turn off "Show headline…" if your picture already has its own text.</p>
                   <div className="flex items-center gap-2">
                     {b.imageUrl && <img src={b.imageUrl} alt="" className="w-14 h-10 rounded object-cover border border-slate-800 shrink-0" />}
                     <input className={inputCls} value={b.imageUrl} onChange={(e) => patch(i, { imageUrl: e.target.value })} placeholder="https://… image link" />
