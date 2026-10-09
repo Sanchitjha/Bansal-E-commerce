@@ -37,11 +37,21 @@ export function emailConfigured(): boolean {
   return !!(process.env.RESEND_API_KEY && process.env.EMAIL_FROM);
 }
 
+/** Resend's shared test sender (onboarding@resend.dev) only delivers to the Resend account owner. */
+export function emailSandbox(): boolean {
+  return /@resend\.dev\b/i.test(process.env.EMAIL_FROM ?? '');
+}
+
+/** True when emails can really reach customers: Resend is connected and a verified sender is in use. */
+export function customerEmailReady(): boolean {
+  return emailConfigured() && !emailSandbox();
+}
+
 /** Sends through Resend. Never throws: a mail failure must not break an order. */
 export async function sendEmail(params: { to: string; subject: string; html: string }): Promise<boolean> {
   if (!emailConfigured()) return false;
   try {
-    const res = await fetch('https://api.resend.com/emails', {
+    const res = await fetch(process.env.RESEND_API_URL || 'https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ from: process.env.EMAIL_FROM, to: [params.to], subject: params.subject, html: params.html }),
@@ -113,6 +123,28 @@ export function orderStatusEmail(order: MailOrder, brand: string) {
     <p style="font-size:13px;color:#475569">Track it anytime on our website with your Order ID and phone number.</p>`
   );
   return { subject: `Order ${order.id}: ${order.orderStatus}`, html };
+}
+
+export function otpEmail(code: string, purpose: 'login' | 'reset', brand: string) {
+  const reset = purpose === 'reset';
+  const html = wrap(
+    brand,
+    reset ? 'Reset your password' : 'Your sign-in code',
+    `<p style="font-size:14px;margin:0 0 12px">Use this code to ${reset ? 'reset your password' : 'sign in'}. It is valid for 10 minutes.</p>
+    <p style="font-size:32px;letter-spacing:8px;font-weight:700;margin:16px 0;color:#264b20">${esc(code)}</p>
+    <p style="font-size:13px;color:#475569">Never share this code with anyone. If you did not ask for it, you can ignore this email.</p>`
+  );
+  return { subject: `${code} is your ${brand} ${reset ? 'password reset' : 'sign-in'} code`, html };
+}
+
+export function passwordChangedEmail(brand: string) {
+  const html = wrap(
+    brand,
+    'Your password was changed',
+    `<p style="font-size:14px">The password for your ${esc(brand)} account was just changed.</p>
+    <p style="font-size:13px;color:#475569">If this was not you, reply to this email or contact us right away.</p>`
+  );
+  return { subject: `Your ${brand} password was changed`, html };
 }
 
 export function adminNewOrderEmail(order: MailOrder, brand: string) {
