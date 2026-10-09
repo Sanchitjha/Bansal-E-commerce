@@ -3,36 +3,38 @@
 import React from 'react';
 import { HeroBannerSlider } from '@/components/home/HeroBannerSlider';
 import { TrustStrip } from '@/components/home/TrustStrip';
-import { ShopByDivision } from '@/components/home/ShopByDivision';
-import { Bestsellers } from '@/components/home/Bestsellers';
+import { ProductTabs } from '@/components/home/ProductTabs';
+import { CategorySection } from '@/components/home/CategorySection';
 import { ShopByCategories } from '@/components/home/ShopByCategories';
 import { DealsAndBulkSection } from '@/components/home/DealsAndBulkSection';
 import { CustomerReviews } from '@/components/home/CustomerReviews';
 import { BlogSection } from '@/components/home/BlogSection';
+import { CreatorVideos } from '@/components/home/CreatorVideos';
 import { ConsultationBanner } from '@/components/home/ConsultationBanner';
 import { PincodeCheckerWidget } from '@/components/shipping/PincodeCheckerWidget';
 import { useShell } from '@/components/layout/StoreShell';
 import { useLuminary } from '@/context/LuminaryContext';
+import { CATEGORY_PAGES } from '@/lib/collections';
+import { homeBestSellers } from '@/lib/home-sections';
 
 export const HomeContent: React.FC = () => {
   const { products } = useLuminary();
   const shell = useShell();
 
+  // The division rows skip what the Best Sellers tab already shows, so no product is listed twice.
+  const alreadyShown = new Set(homeBestSellers(products).map((p) => p.id));
+
   return (
     <>
-      <HeroBannerSlider
-        onSelectProduct={(id) => {
-          const p = products.find((item) => item.id === id);
-          if (p) shell.openProduct(p);
-        }}
-        onOpenBulkModal={() => shell.openBulk()}
-      />
+      <HeroBannerSlider onOpenBulkModal={() => shell.openBulk()} />
 
       <TrustStrip />
 
-      <ShopByDivision onQuickView={shell.openProduct} onOpenBulkModal={shell.openBulk} />
+      <ProductTabs onQuickView={shell.openProduct} onOpenBulkModal={shell.openBulk} />
 
-      <Bestsellers onQuickView={shell.openProduct} onOpenBulkModal={shell.openBulk} />
+      {CATEGORY_PAGES.map((page) => (
+        <CategorySection key={page.slug} page={page} exclude={alreadyShown} onQuickView={shell.openProduct} onOpenBulkModal={shell.openBulk} />
+      ))}
 
       <ShopByCategories />
 
@@ -45,6 +47,8 @@ export const HomeContent: React.FC = () => {
       <CustomerReviews onWriteReview={shell.openReview} />
 
       <BlogSection />
+
+      <CreatorVideos />
 
       <ConsultationBanner />
     </>
