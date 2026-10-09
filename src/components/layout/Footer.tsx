@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Phone, Mail, MapPin, MessageCircle, Instagram, Facebook, Youtube } from 'lucide-react';
+import { Phone, Mail, MapPin, Instagram, Facebook, Youtube } from 'lucide-react';
+import { WhatsAppIcon } from '@/components/ui/WhatsAppIcon';
 import { useLuminary } from '@/context/LuminaryContext';
 import { POLICY_LINKS } from '@/lib/policies';
 import { CATEGORY_PAGES, collectionHref, resolveCollection } from '@/lib/collections';
@@ -141,7 +142,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAdmin, onOpenBulkModal, on
                   onClick={openWhatsApp}
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-green-700 hover:bg-brand-green-800 text-white text-sm font-semibold transition"
                 >
-                  <MessageCircle className="w-4 h-4" /> Chat on WhatsApp
+                  <WhatsAppIcon className="w-4 h-4" /> Chat on WhatsApp
                 </button>
                 {socials.map(({ label, href, icon: Icon }) => (
                   <a
