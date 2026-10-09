@@ -40,7 +40,7 @@ export const getCatalog = unstable_cache(
   },
   // Change the version number whenever the catalog is edited outside the admin panel (a script or the
   // database), so a new deploy does not keep serving the previously cached copy.
-  ['storefront-catalog-v3'],
+  ['storefront-catalog-v4'],
   { tags: ['catalog'], revalidate: 300 }
 );
 
