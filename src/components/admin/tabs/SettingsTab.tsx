@@ -108,6 +108,27 @@ export const SettingsTab: React.FC = () => {
         </section>
 
         <section className={`${card} p-5 space-y-4`}>
+          <div>
+            <h3 className="font-serif text-base font-bold text-gold-400">Social media</h3>
+            <p className="text-xs text-slate-400">Full page links. Icons appear in the website footer only for the links you fill in.</p>
+          </div>
+          <div className="grid sm:grid-cols-3 gap-3">
+            <div>
+              <label className={labelCls}>Instagram</label>
+              <input className={inputCls} value={f.instagramUrl ?? ''} onChange={(e) => set('instagramUrl', e.target.value)} placeholder="https://instagram.com/…" />
+            </div>
+            <div>
+              <label className={labelCls}>Facebook</label>
+              <input className={inputCls} value={f.facebookUrl ?? ''} onChange={(e) => set('facebookUrl', e.target.value)} placeholder="https://facebook.com/…" />
+            </div>
+            <div>
+              <label className={labelCls}>YouTube</label>
+              <input className={inputCls} value={f.youtubeUrl ?? ''} onChange={(e) => set('youtubeUrl', e.target.value)} placeholder="https://youtube.com/@…" />
+            </div>
+          </div>
+        </section>
+
+        <section className={`${card} p-5 space-y-4`}>
           <h3 className="font-serif text-base font-bold text-gold-400">Tax & shipping</h3>
           <div className="grid sm:grid-cols-2 gap-3">
             <div>
