@@ -27,7 +27,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       available: !blocked,
       city: info.city,
       state,
-      estimatedDays: blocked ? 'N/A' : estimateDelivery(state, settings?.sellerState ?? 'Maharashtra', pincode),
+      estimatedDays: blocked ? 'N/A' : estimateDelivery(state, settings?.sellerState ?? 'Punjab', pincode),
       cod: !blocked && (settings ? settings.codEnabled : true),
       message: blocked ? 'Sorry, we do not deliver to this pincode yet.' : undefined,
     });
