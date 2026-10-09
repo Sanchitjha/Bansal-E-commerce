@@ -26,6 +26,9 @@ export interface ReviewItem {
   content: string;
   date: string;
   verified: boolean;
+  status?: 'approved' | 'pending';
+  /** Only sent to the admin. */
+  orderId?: string | null;
 }
 
 export interface Product {
@@ -183,6 +186,21 @@ export interface HeroBanner {
   priority: number;
   isActive: boolean;
   productId?: string;
+  /** 'full' = one wide picture across the page with the text on top; 'split' = text beside a picture. */
+  layout?: 'full' | 'split';
+  /** Whether to show the headline, offer and button on top of the picture (turn off if the picture already has text). */
+  showText?: boolean;
+}
+
+export interface CreatorVideo {
+  id: string;
+  title: string;
+  creator: string;
+  videoUrl: string;
+  posterUrl: string;
+  productId?: string;
+  priority: number;
+  isActive: boolean;
 }
 
 export interface ActivityLog {
@@ -217,4 +235,7 @@ export interface SiteSettings {
   legalName: string;
   codEnabled: boolean;
   blockedPincodes: string;
+  instagramUrl?: string;
+  facebookUrl?: string;
+  youtubeUrl?: string;
 }
