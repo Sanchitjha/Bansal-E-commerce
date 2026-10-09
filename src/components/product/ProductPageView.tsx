@@ -7,6 +7,7 @@ import { optimizeImage, videoPoster } from '@/lib/media';
 import { Product } from '@/types';
 import { useLuminary } from '@/context/LuminaryContext';
 import { useShell } from '@/components/layout/StoreShell';
+import { ProductReviews } from './ProductReviews';
 import { ProductCard } from '@/components/home/ProductCard';
 
 const CATEGORY_LABEL: Record<string, string> = { fragrance: 'Fragrances', ayurvedic: 'Ayurvedic Care', gadgets: 'Mini Gadgets' };
@@ -114,26 +115,54 @@ export const ProductPageView: React.FC<{ product: Product }> = ({ product: initi
           </div>
           <p className="text-xs text-slate-500 -mt-2">Inclusive of {product.gstRate}% GST</p>
 
-          {product.isBulkAvailable && product.bulkSlabs.length > 1 && (
-            <div className="rounded-2xl bg-brand-green-50 border border-brand-green-200 p-3">
-              <div className="flex items-center justify-between text-xs font-bold text-brand-green-800 mb-2">
-                <span>Buy more, save more</span>
-                <button onClick={() => shell.openBulk(product)} className="underline font-semibold">Request B2B quote</button>
+          {product.isBulkAvailable && product.bulkSlabs.length > 1 && (() => {
+            const slabs = [...product.bulkSlabs].sort((a, b) => a.minQty - b.minQty);
+            const activeIndex = slabs.reduce((found, slab, i) => (quantity >= slab.minQty ? i : found), 0);
+            const money = (n: number) => `₹${n.toLocaleString('en-IN')}`;
+            const saved = (product.sellingPrice - unitPrice) * quantity;
+
+            return (
+              <div className="rounded-2xl border border-brand-green-200 overflow-hidden">
+                <div className="flex items-center justify-between bg-brand-green-50 px-4 py-2.5 text-xs font-bold text-brand-green-800">
+                  <span>Buy more, save more</span>
+                  <button onClick={() => shell.openBulk(product)} className="underline font-semibold">Request B2B quote</button>
+                </div>
+                <table className="w-full text-xs bg-white">
+                  <thead>
+                    <tr className="text-[10px] uppercase tracking-wide text-slate-500 text-left">
+                      <th className="px-4 py-2 font-semibold">Quantity</th>
+                      <th className="py-2 font-semibold">Price each</th>
+                      <th className="px-4 py-2 font-semibold text-right">You save (each)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {slabs.map((slab, i) => {
+                      const save = product.sellingPrice - slab.pricePerUnit;
+                      const range = i < slabs.length - 1 ? `${slab.minQty}${slabs[i + 1].minQty - 1 > slab.minQty ? `–${slabs[i + 1].minQty - 1}` : ''}` : `${slab.minQty}+`;
+                      return (
+                        <tr
+                          key={slab.minQty}
+                          onClick={() => setQuantity(Math.min(slab.minQty, Math.max(product.stock, 1)))}
+                          className={`cursor-pointer border-t border-stone-100 ${i === activeIndex ? 'bg-brand-green-50 font-semibold text-slate-900' : 'text-slate-700 hover:bg-stone-50'}`}
+                        >
+                          <td className="px-4 py-2">{range} {slab.minQty === 1 && i === slabs.length - 1 ? 'pc' : 'pcs'}</td>
+                          <td className="py-2">{money(slab.pricePerUnit)}</td>
+                          <td className="px-4 py-2 text-right">
+                            {save > 0 ? `${money(save)} (${Math.round((save / product.sellingPrice) * 100)}%)` : '–'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                <div className="px-4 py-2.5 text-xs bg-brand-green-50 text-brand-green-900">
+                  {quantity} × {money(unitPrice)} = <strong>{money(unitPrice * quantity)}</strong>
+                  {saved > 0 && <span className="text-brand-green-700"> · you save {money(saved)}</span>}
+                  <span className="text-slate-500"> · GST included</span>
+                </div>
               </div>
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 text-center text-xs">
-                {product.bulkSlabs.map((slab) => (
-                  <button
-                    key={slab.minQty}
-                    onClick={() => setQuantity(Math.min(slab.minQty, Math.max(product.stock, 1)))}
-                    className="rounded-lg bg-white border border-stone-200 py-1.5 hover:border-brand-green-600"
-                  >
-                    <div className="text-[10px] uppercase text-slate-500">{slab.minQty}+ pcs</div>
-                    <div className="font-bold text-slate-900">₹{slab.pricePerUnit.toLocaleString('en-IN')}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+            );
+          })()}
 
           <div className="flex items-center gap-2 text-sm font-semibold">
             {inStock ? (
@@ -208,6 +237,8 @@ export const ProductPageView: React.FC<{ product: Product }> = ({ product: initi
           ))}
         </dl>
       </section>
+
+      <ProductReviews productId={product.id} />
 
       {related.length > 0 && (
         <section className="mt-10">
