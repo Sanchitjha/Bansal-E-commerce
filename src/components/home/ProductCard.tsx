@@ -153,15 +153,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView, 
         <button
           onClick={handleAdd}
           disabled={outOfStock}
-          className={`mt-2 w-full py-2.5 rounded-full text-sm font-semibold transition ${
+          className={`mt-2 w-full py-3 text-[12px] font-semibold uppercase tracking-[0.16em] transition ${
             outOfStock
               ? 'bg-stone-200 text-stone-500 cursor-not-allowed'
               : added
-              ? 'bg-brand-orange-500 text-white'
-              : 'bg-brand-green-700 hover:bg-brand-green-800 text-white'
+              ? 'bg-brand-green-700 text-white'
+              : 'bg-black hover:bg-brand-green-800 text-white'
           }`}
         >
-          {outOfStock ? 'Out of stock' : added ? 'Added to cart' : 'Add to cart'}
+          {outOfStock ? 'Out of stock' : added ? 'Added ✓' : 'Add to cart'}
         </button>
       </div>
     </div>
