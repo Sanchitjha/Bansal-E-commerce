@@ -26,6 +26,7 @@ import {
   INITIAL_ORDERS,
   INITIAL_BULK_ENQUIRIES,
   INITIAL_HERO_BANNERS,
+  INITIAL_CREATOR_VIDEOS,
   INITIAL_ACTIVITY_LOGS,
   INITIAL_SHEET_LOGS,
   INITIAL_SETTINGS,
@@ -95,6 +96,9 @@ async function main() {
 
   const banners = INITIAL_HERO_BANNERS.map(({ id, ...rest }) => ({ _id: id, ...rest, productId: rest.productId ?? null }));
   console.log(`  banners:      +${await insertMissing(m.HeroBanner, banners)}`);
+
+  const creatorVideos = INITIAL_CREATOR_VIDEOS.map(({ id, ...rest }) => ({ _id: id, ...rest }));
+  console.log(`  creator videos: +${await insertMissing(m.CreatorVideo, creatorVideos)}`);
 
   const settings = await m.SiteSettings.updateOne({ _id: 'singleton' }, { $setOnInsert: { _id: 'singleton', ...INITIAL_SETTINGS } }, { upsert: true });
   console.log(`  settings:     ${settings.upsertedCount ? 'created' : 'kept as is'}`);

@@ -1,4 +1,4 @@
-import { Product, Coupon, HeroBanner, Order, BulkEnquiry, ActivityLog, GoogleSheetSyncLog, SiteSettings } from '@/types';
+import { Product, Coupon, HeroBanner, Order, BulkEnquiry, ActivityLog, GoogleSheetSyncLog, SiteSettings, CreatorVideo } from '@/types';
 
 export const INITIAL_SETTINGS: SiteSettings = {
   websiteName: 'LUMINARY',
@@ -927,4 +927,37 @@ export const INITIAL_SHEET_LOGS: GoogleSheetSyncLog[] = [
     timestamp: '2026-09-28 10:15 AM',
     status: 'Synced',
   }
+];
+
+export const INITIAL_CREATOR_VIDEOS: CreatorVideo[] = [
+  {
+    id: 'vid-1',
+    title: 'Luxury Fragrance Unboxing & First Impression',
+    creator: '@kavita.fragrances',
+    videoUrl: 'https://res.cloudinary.com/wu9kqgfs/video/upload/v1791381624/luminary/videos/day-or-night.mp4',
+    posterUrl: 'https://res.cloudinary.com/wu9kqgfs/image/upload/v1791381620/luminary/products/day-or-night-60ml-1.jpg',
+    productId: 'prod-3',
+    priority: 1,
+    isActive: true,
+  },
+  {
+    id: 'vid-2',
+    title: 'Fragrance Land 100ml EDP: All-Day Projection Review',
+    creator: '@rohit_perfumes',
+    videoUrl: 'https://res.cloudinary.com/wu9kqgfs/video/upload/v1791381624/luminary/videos/day-or-night.mp4',
+    posterUrl: 'https://res.cloudinary.com/wu9kqgfs/image/upload/v1791381617/luminary/products/fragrance-land-100ml-1.jpg',
+    productId: 'prod-1',
+    priority: 2,
+    isActive: true,
+  },
+  {
+    id: 'vid-3',
+    title: 'Pure Extract 60ml: Fresh Citrus & Amber Notes',
+    creator: '@scentwithme',
+    videoUrl: 'https://res.cloudinary.com/wu9kqgfs/video/upload/v1791381624/luminary/videos/day-or-night.mp4',
+    posterUrl: 'https://res.cloudinary.com/wu9kqgfs/image/upload/v1791381618/luminary/products/pure-extract-60ml-1.jpg',
+    productId: 'prod-2',
+    priority: 3,
+    isActive: true,
+  },
 ];

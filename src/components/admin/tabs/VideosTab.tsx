@@ -99,6 +99,24 @@ export const VideosTab: React.FC = () => {
               {videos.length === 0 ? 'No videos yet.' : `${visible} of ${videos.length} visible on the website.`}
               {!uploadEnabled && ' (Video upload is not connected, so paste a link to a video file instead.)'}
             </p>
+            <div className="mt-2.5 flex flex-wrap items-center gap-2">
+              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ${visible > 0 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-400 border border-slate-700'}`}>
+                <span className={`w-2 h-2 rounded-full ${visible > 0 ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
+                {visible > 0 ? 'Section is VISIBLE on Homepage (under Blogs)' : 'Section is HIDDEN from Homepage'}
+              </span>
+              {videos.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const makeActive = visible === 0;
+                    setVideos((prev) => prev.map((v) => ({ ...v, isActive: makeActive })));
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-obsidian-900 border border-slate-700 hover:border-gold-500/40 text-[11px] font-semibold text-slate-300 hover:text-gold-300 transition"
+                >
+                  {visible > 0 ? 'Hide Entire Section' : 'Show Entire Section'}
+                </button>
+              )}
+            </div>
           </div>
           <button onClick={() => setVideos([...videos, blank(videos.length + 1)])} className={`${btnGhost} flex items-center gap-1 shrink-0`}>
             <Plus className="w-3.5 h-3.5" /> Add video
