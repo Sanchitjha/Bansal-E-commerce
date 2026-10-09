@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/models';
 import { razorpayConfigured } from '@/lib/payments';
-import { emailConfigured } from '@/lib/email';
+import { customerEmailReady } from '@/lib/email';
 import { serverError } from '@/lib/api-helpers';
 
 export const dynamic = 'force-dynamic';
@@ -14,7 +14,7 @@ export async function GET() {
     return NextResponse.json({
       online: razorpayConfigured(),
       cod: settings ? settings.codEnabled : true,
-      email: emailConfigured(),
+      email: customerEmailReady(),
     });
   } catch (err) {
     return serverError(err);
