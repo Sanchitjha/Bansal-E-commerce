@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Trash2, Tag, ShoppingBag, ArrowRight, Truck, Check, Layers, MessageCircle } from 'lucide-react';
+import { X, Trash2, Tag, ShoppingBag, ArrowRight, Truck, Check, Layers } from 'lucide-react';
+import { WhatsAppIcon } from '@/components/ui/WhatsAppIcon';
 import { useLuminary } from '@/context/LuminaryContext';
 import { optimizeImage } from '@/lib/media';
 
@@ -268,7 +269,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 onClick={handleWhatsAppCheckout}
                 className="w-full py-2.5 rounded-xl bg-emerald-600/20 border border-emerald-500/30 text-emerald-700 hover:bg-emerald-600/30 font-semibold text-xs flex items-center justify-center gap-2 transition"
               >
-                <MessageCircle className="w-4 h-4 text-emerald-600" />
+                <WhatsAppIcon className="w-4 h-4 text-[#25D366]" />
                 <span>Quick Checkout on WhatsApp</span>
               </button>
             </div>
