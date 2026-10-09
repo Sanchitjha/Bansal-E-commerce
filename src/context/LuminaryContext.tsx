@@ -138,6 +138,9 @@ interface LuminaryContextType {
   customerLogin: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
   customerRegister: (data: { name: string; email: string; phone: string; password: string }) => Promise<{ success: boolean; message?: string }>;
   customerLogout: () => Promise<void>;
+  requestEmailCode: (email: string, purpose: 'login' | 'reset') => Promise<{ success: boolean; message?: string }>;
+  customerLoginWithCode: (email: string, code: string) => Promise<{ success: boolean; message?: string }>;
+  customerResetPassword: (email: string, code: string, newPassword: string) => Promise<{ success: boolean; message?: string }>;
   refreshCustomer: () => Promise<void>;
 
   // Admin auth
@@ -458,6 +461,35 @@ export const LuminaryProvider: React.FC<{ children: React.ReactNode; initialData
     }
   };
 
+  const requestEmailCode = async (email: string, purpose: 'login' | 'reset') => {
+    try {
+      const res = await apiRequest<{ message?: string }>('/api/customer/otp/request', { method: 'POST', body: JSON.stringify({ email, purpose }) });
+      return { success: true, message: res.message };
+    } catch (err) {
+      return { success: false, message: errorText(err, 'Could not send the code') };
+    }
+  };
+
+  const customerLoginWithCode = async (email: string, code: string) => {
+    try {
+      await apiRequest('/api/customer/otp/verify', { method: 'POST', body: JSON.stringify({ email, code }) });
+      await refreshCustomer();
+      return { success: true };
+    } catch (err) {
+      return { success: false, message: errorText(err, 'Could not sign you in') };
+    }
+  };
+
+  const customerResetPassword = async (email: string, code: string, newPassword: string) => {
+    try {
+      await apiRequest('/api/customer/password-reset', { method: 'POST', body: JSON.stringify({ email, code, newPassword }) });
+      await refreshCustomer();
+      return { success: true };
+    } catch (err) {
+      return { success: false, message: errorText(err, 'Could not reset your password') };
+    }
+  };
+
   const customerLogout = async () => {
     await apiRequest('/api/customer/logout', { method: 'POST' }).catch(() => {});
     setCustomer(null);
@@ -651,6 +683,9 @@ export const LuminaryProvider: React.FC<{ children: React.ReactNode; initialData
         customerLogin,
         customerRegister,
         customerLogout,
+        requestEmailCode,
+        customerLoginWithCode,
+        customerResetPassword,
         refreshCustomer,
         adminSession,
         adminAuthChecked,
