@@ -8,6 +8,7 @@ import {
   Order,
   BulkEnquiry,
   HeroBanner,
+  CreatorVideo,
   ActivityLog,
   GoogleSheetSyncLog,
   SiteSettings,
@@ -73,7 +74,20 @@ export interface CheckoutDetails {
 export interface InitialStoreData {
   products: Product[];
   heroBanners: HeroBanner[];
+  creatorVideos?: CreatorVideo[];
   settings: SiteSettings | null;
+}
+
+export interface NewReview {
+  productId: string;
+  rating: number;
+  title: string;
+  content: string;
+  author: string;
+  location: string;
+  /** With the phone used for that order, earns the Verified Buyer badge. */
+  orderId?: string;
+  phone?: string;
 }
 
 export type ToastType = 'error' | 'success' | 'info';
@@ -91,6 +105,8 @@ interface LuminaryContextType {
   coupons: Coupon[];
   heroBanners: HeroBanner[];
   adminBanners: HeroBanner[];
+  creatorVideos: CreatorVideo[];
+  adminCreatorVideos: CreatorVideo[];
   bulkEnquiries: BulkEnquiry[];
   activityLogs: ActivityLog[];
   sheetSyncLogs: GoogleSheetSyncLog[];
@@ -119,7 +135,7 @@ interface LuminaryContextType {
   getUnitPriceForProduct: (product: Product, quantity: number) => number;
 
   // Reviews
-  addReview: (review: Omit<ReviewItem, 'id' | 'date' | 'verified'>) => Promise<void>;
+  addReview: (review: NewReview) => Promise<{ verified: boolean; status: 'approved' | 'pending' }>;
 
   // Checkout & Orders
   placeOrder: (details: CheckoutDetails) => Promise<PlaceOrderResult>;
@@ -155,6 +171,7 @@ interface LuminaryContextType {
   saveProduct: (product: ProductInput) => Promise<void>;
   deleteProduct: (productId: string) => Promise<void>;
   updateHeroBanners: (banners: HeroBanner[]) => Promise<void>;
+  updateCreatorVideos: (videos: CreatorVideo[]) => Promise<void>;
   reorderPriorityProducts: (priorityProductIds: string[]) => Promise<void>;
   updateOrderStatus: (orderId: string, status: OrderStatus, courier?: string, trackingNumber?: string) => Promise<void>;
   updateEnquiryStatus: (enquiryId: string, status: BulkEnquiryStatus) => Promise<void>;
@@ -203,6 +220,8 @@ export const LuminaryProvider: React.FC<{ children: React.ReactNode; initialData
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [heroBanners, setHeroBanners] = useState<HeroBanner[]>(initialData?.heroBanners ?? []);
   const [adminBanners, setAdminBanners] = useState<HeroBanner[]>([]);
+  const [creatorVideos, setCreatorVideos] = useState<CreatorVideo[]>(initialData?.creatorVideos ?? []);
+  const [adminCreatorVideos, setAdminCreatorVideos] = useState<CreatorVideo[]>([]);
   const [bulkEnquiries, setBulkEnquiries] = useState<BulkEnquiry[]>([]);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [sheetSyncLogs, setSheetSyncLogs] = useState<GoogleSheetSyncLog[]>([]);
@@ -383,22 +402,27 @@ export const LuminaryProvider: React.FC<{ children: React.ReactNode; initialData
     };
   };
 
-  const addReview = async (newReviewData: Omit<ReviewItem, 'id' | 'date' | 'verified'>) => {
+  const addReview = async (newReviewData: NewReview) => {
     const review = await apiRequest<ReviewItem>('/api/reviews', {
       method: 'POST',
       body: JSON.stringify(newReviewData),
     });
-    setReviews((prev) => [review, ...prev]);
-    setProducts((prev) =>
-      prev.map((p) => {
-        if (p.id === newReviewData.productId) {
-          const newCount = p.reviewsCount + 1;
-          const newRating = Math.round(((p.rating * p.reviewsCount + newReviewData.rating) / newCount) * 10) / 10;
-          return { ...p, rating: newRating, reviewsCount: newCount };
-        }
-        return p;
-      })
-    );
+    const status = review.status ?? 'approved';
+    // Reviews waiting for approval are not shown (and do not count) until the store owner approves them.
+    if (status === 'approved') {
+      setReviews((prev) => [review, ...prev]);
+      setProducts((prev) =>
+        prev.map((p) => {
+          if (p.id === newReviewData.productId) {
+            const newCount = p.reviewsCount + 1;
+            const newRating = Math.round(((p.rating * p.reviewsCount + newReviewData.rating) / newCount) * 10) / 10;
+            return { ...p, rating: newRating, reviewsCount: newCount };
+          }
+          return p;
+        })
+      );
+    }
+    return { verified: review.verified, status };
   };
 
   const refreshProducts = () => apiRequest<Product[]>('/api/products').then(setProducts).catch(() => {});
@@ -531,7 +555,7 @@ export const LuminaryProvider: React.FC<{ children: React.ReactNode; initialData
   };
 
   const refreshAdminData = useCallback(async () => {
-    const [ordersData, enquiriesData, activityData, sheetData, couponsData, productsData, bannersData] = await Promise.all([
+    const [ordersData, enquiriesData, activityData, sheetData, couponsData, productsData, bannersData, videosData] = await Promise.all([
       apiRequest<Order[]>('/api/orders').catch(() => []),
       apiRequest<BulkEnquiry[]>('/api/bulk-enquiries').catch(() => []),
       apiRequest<ActivityLog[]>('/api/activity-logs').catch(() => []),
@@ -539,6 +563,7 @@ export const LuminaryProvider: React.FC<{ children: React.ReactNode; initialData
       apiRequest<Coupon[]>('/api/coupons').catch(() => []),
       apiRequest<Product[]>('/api/products?includeInactive=true').catch(() => []),
       apiRequest<HeroBanner[]>('/api/hero-banners').catch(() => []),
+      apiRequest<CreatorVideo[]>('/api/creator-videos').catch(() => []),
     ]);
     setOrders(ordersData);
     setBulkEnquiries(enquiriesData);
@@ -547,6 +572,7 @@ export const LuminaryProvider: React.FC<{ children: React.ReactNode; initialData
     setCoupons(couponsData);
     setAdminProducts(productsData);
     setAdminBanners(bannersData);
+    setAdminCreatorVideos(videosData);
   }, []);
 
   const upsertById = <T extends { id: string }>(list: T[], item: T) =>
@@ -571,6 +597,12 @@ export const LuminaryProvider: React.FC<{ children: React.ReactNode; initialData
     const saved = await apiRequest<HeroBanner[]>('/api/hero-banners', { method: 'PUT', body: JSON.stringify(banners) });
     setAdminBanners(saved);
     setHeroBanners(saved.filter((b) => b.isActive));
+  };
+
+  const updateCreatorVideos = async (videos: CreatorVideo[]) => {
+    const saved = await apiRequest<CreatorVideo[]>('/api/creator-videos', { method: 'PUT', body: JSON.stringify(videos) });
+    setAdminCreatorVideos(saved);
+    setCreatorVideos(saved.filter((v) => v.isActive));
   };
 
   const reorderPriorityProducts = async (priorityProductIds: string[]) => {
@@ -651,6 +683,8 @@ export const LuminaryProvider: React.FC<{ children: React.ReactNode; initialData
         coupons,
         heroBanners,
         adminBanners,
+        creatorVideos,
+        adminCreatorVideos,
         bulkEnquiries,
         activityLogs,
         sheetSyncLogs,
@@ -696,6 +730,7 @@ export const LuminaryProvider: React.FC<{ children: React.ReactNode; initialData
         saveProduct,
         deleteProduct,
         updateHeroBanners,
+        updateCreatorVideos,
         reorderPriorityProducts,
         updateOrderStatus,
         updateEnquiryStatus,
