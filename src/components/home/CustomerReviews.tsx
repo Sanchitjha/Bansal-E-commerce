@@ -80,7 +80,7 @@ export const CustomerReviews: React.FC<CustomerReviewsProps> = ({ onWriteReview 
           onClick={onWriteReview}
           className="px-6 py-3 rounded-full bg-brand-green-700 hover:bg-brand-green-800 text-white text-sm font-semibold transition"
         >
-          Write a review & earn 10% off
+          Write a review
         </button>
       </div>
     </section>
