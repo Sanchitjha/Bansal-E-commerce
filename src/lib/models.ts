@@ -425,7 +425,7 @@ const siteSettingsSchema = new Schema<ISiteSettings>(
     freeShippingThreshold: { type: Number, default: 999 },
     defaultShippingCharge: { type: Number, default: 99 },
     lowStockAlertThreshold: { type: Number, default: 10 },
-    sellerState: { type: String, default: 'Maharashtra' },
+    sellerState: { type: String, default: 'Punjab' },
     gstin: { type: String, default: '' },
     legalName: { type: String, default: '' },
     codEnabled: { type: Boolean, default: true },
