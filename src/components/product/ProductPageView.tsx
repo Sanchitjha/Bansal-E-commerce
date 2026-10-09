@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Star, CheckCircle2, AlertCircle, Truck, ShieldCheck, RefreshCw, MessageCircle, PlayCircle } from 'lucide-react';
+import { Star, CheckCircle2, AlertCircle, Truck, ShieldCheck, RefreshCw, PlayCircle } from 'lucide-react';
+import { WhatsAppIcon } from '@/components/ui/WhatsAppIcon';
 import { optimizeImage, videoPoster } from '@/lib/media';
 import { Product } from '@/types';
 import { useLuminary } from '@/context/LuminaryContext';
@@ -205,7 +206,7 @@ export const ProductPageView: React.FC<{ product: Product }> = ({ product: initi
             onClick={() => window.open(`https://wa.me/${settings.whatsAppNumber}?text=${encodeURIComponent(`Hi, I have a question about ${product.name} (SKU ${product.sku}).`)}`, '_blank')}
             className="self-start inline-flex items-center gap-2 text-sm font-semibold text-brand-green-700 hover:underline"
           >
-            <MessageCircle className="w-4 h-4" /> Ask a question on WhatsApp
+            <WhatsAppIcon className="w-4 h-4" /> Ask a question on WhatsApp
           </button>
 
           <ul className="grid sm:grid-cols-3 gap-3 pt-2 text-xs text-slate-600">
