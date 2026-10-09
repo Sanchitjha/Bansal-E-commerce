@@ -6,6 +6,7 @@ import { AnnouncementBar } from '@/components/layout/AnnouncementBar';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Toast } from '@/components/layout/Toast';
+import { FloatingWhatsApp } from '@/components/layout/FloatingWhatsApp';
 import { ProductDetailModal } from '@/components/product/ProductDetailModal';
 import { CartDrawer } from '@/components/cart/CartDrawer';
 import { CheckoutModal } from '@/components/checkout/CheckoutModal';
@@ -196,6 +197,7 @@ export const StoreShell: React.FC<{ children: React.ReactNode }> = ({ children }
           </div>
         )}
 
+        <FloatingWhatsApp />
         <Toast />
       </div>
     </ShellContext.Provider>
