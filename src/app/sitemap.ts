@@ -2,6 +2,7 @@ import type { MetadataRoute } from 'next';
 import { getCatalog } from '@/lib/data';
 import { POLICY_SLUGS } from '@/lib/policies';
 import { siteUrl } from '@/lib/site';
+import { CATEGORY_PAGES, collectionHref, resolveCollection, slugify } from '@/lib/collections';
 
 export const revalidate = 3600;
 
@@ -9,8 +10,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = siteUrl();
   const { products } = await getCatalog();
 
+  // Every collection page that has products: the fixed ones plus one per division and product type.
+  const slugs = new Set<string>(['all', 'best-sellers', 'new-arrivals', ...CATEGORY_PAGES.map((c) => c.slug)]);
+  products.forEach((p) => p.subcategory && slugs.add(slugify(p.subcategory)));
+  const collections = [...slugs].filter((slug) => (resolveCollection(slug, products)?.products.length ?? 0) > 0);
+
   return [
     { url: base, changeFrequency: 'daily', priority: 1 },
+    ...collections.map((slug) => ({ url: `${base}${collectionHref(slug)}`, changeFrequency: 'daily' as const, priority: 0.7 })),
     ...products.map((p) => ({
       url: `${base}/product/${p.urlSlug}`,
       lastModified: new Date(p.updatedAt),
