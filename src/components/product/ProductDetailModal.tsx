@@ -230,21 +230,32 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   </div>
 
                   <div className="grid grid-cols-4 gap-1 text-[11px]">
-                    {product.bulkSlabs.map((slab, idx) => (
-                      <div
-                        key={idx}
-                        onClick={() => setQuantity(slab.minQty)}
-                        className={`p-1.5 rounded text-center cursor-pointer transition ${
-                          quantity >= slab.minQty && (idx === product.bulkSlabs.length - 1 || quantity < product.bulkSlabs[idx + 1].minQty)
-                            ? 'bg-brand-green-700 text-obsidian-950 font-bold shadow'
-                            : 'bg-white border border-stone-200 text-slate-700 hover:border-brand-green-600/40'
-                        }`}
-                      >
-                        <p className="text-[10px] uppercase opacity-80">{slab.minQty} Pc{slab.minQty > 1 ? 's' : ''}</p>
-                        <p className="font-mono font-bold text-xs">₹{slab.pricePerUnit}</p>
-                      </div>
-                    ))}
+                    {product.bulkSlabs.map((slab, idx) => {
+                      const savePct = Math.round(((product.sellingPrice - slab.pricePerUnit) / product.sellingPrice) * 100);
+                      return (
+                        <div
+                          key={idx}
+                          onClick={() => setQuantity(slab.minQty)}
+                          className={`p-1.5 rounded text-center cursor-pointer transition ${
+                            quantity >= slab.minQty && (idx === product.bulkSlabs.length - 1 || quantity < product.bulkSlabs[idx + 1].minQty)
+                              ? 'bg-brand-green-700 text-white font-bold shadow'
+                              : 'bg-white border border-stone-200 text-slate-700 hover:border-brand-green-600/40'
+                          }`}
+                        >
+                          <p className="text-[10px] uppercase opacity-80">{slab.minQty}+ pc{slab.minQty > 1 ? 's' : ''}</p>
+                          <p className="font-mono font-bold text-xs">₹{slab.pricePerUnit.toLocaleString('en-IN')} each</p>
+                          <p className="text-[10px] opacity-80">{savePct > 0 ? `save ${savePct}%` : 'regular'}</p>
+                        </div>
+                      );
+                    })}
                   </div>
+                  <p className="mt-2 text-[11px] text-slate-600">
+                    {quantity} × ₹{currentUnitPrice.toLocaleString('en-IN')} = <strong>₹{(currentUnitPrice * quantity).toLocaleString('en-IN')}</strong>
+                    {currentUnitPrice < product.sellingPrice && (
+                      <span className="text-brand-green-700"> · you save ₹{((product.sellingPrice - currentUnitPrice) * quantity).toLocaleString('en-IN')}</span>
+                    )}
+                    <span className="text-slate-500"> · GST included</span>
+                  </p>
                 </div>
               )}
 
