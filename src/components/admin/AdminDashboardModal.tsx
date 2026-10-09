@@ -15,6 +15,7 @@ import {
   TrendingUp,
   ClipboardList,
   Video,
+  Star,
   LogOut,
   Lock,
 } from 'lucide-react';
@@ -30,13 +31,14 @@ import { TaxTab } from './tabs/TaxTab';
 import { ActivityTab, OrderLogTab } from './tabs/LogsTab';
 import { SettingsTab } from './tabs/SettingsTab';
 import { VideosTab } from './tabs/VideosTab';
+import { ReviewsTab } from './tabs/ReviewsTab';
 
 interface AdminDashboardModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-type TabId = 'overview' | 'products' | 'merch' | 'videos' | 'orders' | 'bulk' | 'coupons' | 'inventory' | 'tax' | 'activity' | 'orderlog' | 'settings';
+type TabId = 'overview' | 'products' | 'merch' | 'videos' | 'reviews' | 'orders' | 'bulk' | 'coupons' | 'inventory' | 'tax' | 'activity' | 'orderlog' | 'settings';
 
 const AdminLoginForm: React.FC = () => {
   const { adminLogin } = useLuminary();
@@ -124,6 +126,7 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
     { id: 'products', label: 'Products', icon: Package },
     { id: 'merch', label: 'Homepage', icon: TrendingUp },
     { id: 'videos', label: 'Creator videos', icon: Video },
+    { id: 'reviews', label: 'Reviews', icon: Star },
     { id: 'orders', label: 'Orders', icon: ShoppingBag, count: openOrders },
     { id: 'bulk', label: 'Bulk enquiries', icon: Layers, count: newEnquiries },
     { id: 'coupons', label: 'Coupons', icon: Tag },
@@ -198,6 +201,7 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({ isOpen
               {activeTab === 'products' && <ProductsTab />}
               {activeTab === 'merch' && <MerchandisingTab />}
               {activeTab === 'videos' && <VideosTab />}
+              {activeTab === 'reviews' && <ReviewsTab />}
               {activeTab === 'orders' && <OrdersTab />}
               {activeTab === 'bulk' && <BulkTab />}
               {activeTab === 'coupons' && <CouponsTab />}
