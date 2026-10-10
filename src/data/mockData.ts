@@ -54,7 +54,7 @@ export const INITIAL_HERO_BANNERS: HeroBanner[] = [
     discountTag: '20% OFF',
     buttonText: 'SHOP AYURVEDIC CARE',
     destinationUrl: '/collections/ayurvedic-care',
-    imageUrl: 'https://res.cloudinary.com/wu9kqgfs/image/upload/v1791555870/luminary/products/banner-safed-musli-clear.jpg',
+    imageUrl: 'https://res.cloudinary.com/wu9kqgfs/image/upload/v1791631057/luminary/products/banner-safed-musli-clear.jpg',
     priority: 3,
     isActive: true,
     layout: 'full',
