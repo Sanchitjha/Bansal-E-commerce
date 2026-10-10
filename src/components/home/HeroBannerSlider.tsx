@@ -100,35 +100,47 @@ export const HeroBannerSlider: React.FC<HeroBannerSliderProps> = ({ onOpenBulkMo
                   </div>
                 </div>
               ) : (
-                <div className="relative md:h-[540px] lg:h-[620px]">
+                <div className="relative w-full h-[440px] sm:h-[480px] md:h-[520px] lg:h-[580px] xl:h-[620px] overflow-hidden">
                   <img
-                    src={optimizeImage(banner.imageUrl, 2200)}
+                    src={optimizeImage(banner.imageUrl, 2400)}
                     alt={showText ? '' : banner.title}
                     loading={i === 0 ? 'eager' : 'lazy'}
-                    className="w-full h-60 sm:h-72 md:h-full object-cover object-[78%_center] md:absolute md:inset-0"
+                    className="w-full h-full object-cover object-[right_center] md:object-center select-none"
                   />
 
+                  {href && (
+                    <Link href={href} className="absolute inset-0 z-0" aria-label={banner.title} tabIndex={-1} />
+                  )}
+
                   {showText ? (
-                    <>
-                      <div className="hidden md:block absolute inset-y-0 left-0 w-[52%] bg-gradient-to-r from-white/80 via-white/40 to-transparent" aria-hidden />
-                      <div className="md:absolute md:inset-0 md:flex md:items-center bg-[#f6f0e4] md:bg-transparent">
-                        <div className="w-full max-w-[1400px] mx-auto px-5 sm:px-8 md:px-20 py-7 md:py-0">
-                          <div className="max-w-[460px] flex flex-col gap-4 items-start">
-                            {banner.badge && (
-                              <span className="px-3 py-1 bg-black text-white text-[11px] font-semibold uppercase tracking-[0.2em]">{banner.badge}</span>
-                            )}
-                            <h2 className="text-3xl sm:text-4xl lg:text-[3.4rem] font-bold text-brand-green-900 leading-[1.08]">{banner.title}</h2>
-                            {banner.subtitle && <p className="text-sm sm:text-base text-slate-700 leading-relaxed">{banner.subtitle}</p>}
-                            {banner.discountTag && (
-                              <span className="px-3 py-1 bg-brand-orange-500 text-white text-xs font-bold tracking-wide">{banner.discountTag}</span>
-                            )}
-                            <div className="pt-1">{cta(banner, href, buttonClass)}</div>
-                          </div>
+                    <div className="absolute inset-0 flex items-center z-10 pointer-events-none">
+                      {/* Smooth gradient backdrop for text clarity on the left */}
+                      <div className="absolute inset-y-0 left-0 w-full sm:w-[55%] md:w-[48%] lg:w-[42%] bg-gradient-to-r from-[#f1e6cf]/90 via-[#f1e6cf]/60 to-transparent pointer-events-none" aria-hidden />
+
+                      <div className="relative w-full max-w-[1400px] mx-auto px-6 sm:px-10 md:px-14 lg:px-20">
+                        <div className="max-w-[340px] sm:max-w-[390px] md:max-w-[430px] lg:max-w-[480px] flex flex-col gap-3 sm:gap-4 items-start pointer-events-auto">
+                          {banner.badge && (
+                            <span className="px-3 py-1 bg-black text-white text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.2em] shadow-sm">
+                              {banner.badge}
+                            </span>
+                          )}
+                          <h2 className="text-2xl sm:text-3xl md:text-3xl lg:text-4xl xl:text-5xl font-extrabold text-brand-green-950 leading-[1.12] drop-shadow-sm">
+                            {banner.title}
+                          </h2>
+                          {banner.subtitle && (
+                            <p className="text-xs sm:text-sm md:text-base text-slate-700 leading-relaxed max-w-sm">
+                              {banner.subtitle}
+                            </p>
+                          )}
+                          {banner.discountTag && (
+                            <span className="px-3 py-1 bg-brand-orange-500 text-white text-xs font-bold tracking-wide shadow-sm">
+                              {banner.discountTag}
+                            </span>
+                          )}
+                          <div className="pt-1">{cta(banner, href, buttonClass)}</div>
                         </div>
                       </div>
-                    </>
-                  ) : href ? (
-                    <Link href={href} className="absolute inset-0" aria-label={banner.title} />
+                    </div>
                   ) : null}
                 </div>
               )}
@@ -141,19 +153,19 @@ export const HeroBannerSlider: React.FC<HeroBannerSliderProps> = ({ onOpenBulkMo
         <>
           <button
             onClick={() => go(-1)}
-            className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/90 hover:bg-white text-slate-900 items-center justify-center shadow"
+            className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/90 hover:bg-white text-slate-900 items-center justify-center shadow-lg transition hover:scale-105"
             aria-label="Previous slide"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
           <button
             onClick={() => go(1)}
-            className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/90 hover:bg-white text-slate-900 items-center justify-center shadow"
+            className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/90 hover:bg-white text-slate-900 items-center justify-center shadow-lg transition hover:scale-105"
             aria-label="Next slide"
           >
             <ChevronRight className="w-5 h-5" />
           </button>
-          <div className="absolute z-20 left-1/2 -translate-x-1/2 top-[206px] sm:top-[254px] md:top-auto md:bottom-5 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80">
+          <div className="absolute z-20 left-1/2 -translate-x-1/2 bottom-4 sm:bottom-6 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/80 backdrop-blur-sm shadow-md">
             {banners.map((b, i) => (
               <button
                 key={b.id}
