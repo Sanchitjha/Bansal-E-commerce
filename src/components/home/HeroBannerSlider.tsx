@@ -100,12 +100,12 @@ export const HeroBannerSlider: React.FC<HeroBannerSliderProps> = ({ onOpenBulkMo
                   </div>
                 </div>
               ) : (
-                <div className={`relative w-full h-[320px] sm:h-[400px] md:h-[480px] lg:h-[520px] overflow-hidden ${showText ? 'bg-[#fcfaf6]' : 'bg-[#240e04]'} flex items-center justify-center`}>
+                <div className={`relative w-full h-[320px] sm:h-[400px] md:h-[480px] lg:h-[500px] overflow-hidden ${showText ? 'bg-[#fcfaf6]' : 'bg-[#240e04]'} flex items-center justify-center`}>
                   <img
                     src={optimizeImage(banner.imageUrl, 2400)}
                     alt={showText ? '' : banner.title}
                     loading={i === 0 ? 'eager' : 'lazy'}
-                    className={`w-full h-full ${showText ? 'object-cover object-[75%_center] md:object-contain md:object-right' : 'object-contain'} select-none`}
+                    className={`w-full h-full ${showText ? 'object-cover object-[60%_center] md:object-[62%_center]' : 'object-contain'} select-none`}
                   />
 
                   {href && (
@@ -115,10 +115,10 @@ export const HeroBannerSlider: React.FC<HeroBannerSliderProps> = ({ onOpenBulkMo
                   {showText ? (
                     <div className="absolute inset-0 flex items-center z-10 pointer-events-none">
                       {/* Smooth gradient backdrop for text clarity on the left */}
-                      <div className="absolute inset-y-0 left-0 w-full sm:w-[55%] md:w-[48%] lg:w-[42%] bg-gradient-to-r from-[#fcfaf6]/95 via-[#fcfaf6]/80 to-transparent pointer-events-none" aria-hidden />
+                      <div className="absolute inset-y-0 left-0 w-full sm:w-[50%] md:w-[44%] lg:w-[38%] bg-gradient-to-r from-[#fcfaf6]/95 via-[#fcfaf6]/75 to-transparent pointer-events-none" aria-hidden />
 
                       <div className="relative w-full max-w-[1400px] mx-auto px-6 sm:px-10 md:px-14 lg:px-20">
-                        <div className="max-w-[340px] sm:max-w-[390px] md:max-w-[430px] lg:max-w-[480px] flex flex-col gap-3 sm:gap-4 items-start pointer-events-auto">
+                        <div className="max-w-[320px] sm:max-w-[360px] md:max-w-[400px] lg:max-w-[440px] flex flex-col gap-2.5 sm:gap-3.5 items-start pointer-events-auto">
                           {banner.badge && (
                             <span className="px-3 py-1 bg-black text-white text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.2em] shadow-sm">
                               {banner.badge}
