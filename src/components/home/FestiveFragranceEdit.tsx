@@ -227,12 +227,18 @@ export const FestiveFragranceEdit: React.FC<FestiveFragranceEditProps> = ({ onQu
 
                 {/* Pricing Display */}
                 <div className="mt-3 flex items-baseline gap-2">
-                  <span className="text-lg sm:text-xl font-extrabold text-white">
+                  <span className="text-xl sm:text-2xl font-extrabold text-amber-300">
                     ₹{item.price.toLocaleString('en-IN')}
                   </span>
                   <span className="text-xs text-amber-300/40 line-through">
                     ₹{item.mrp.toLocaleString('en-IN')}
                   </span>
+                  <span className="text-[10px] font-bold text-amber-400 bg-amber-400/10 border border-amber-400/30 px-1.5 py-0.5 rounded">
+                    FESTIVE DEAL
+                  </span>
+                </div>
+                <div className="mt-1 text-[11px] font-medium text-amber-200/90 bg-amber-950/70 border border-amber-500/30 px-2 py-0.5 rounded-full inline-block">
+                  + ₹98 Delivery · Total ₹99 Payable
                 </div>
 
                 {/* Action CTA */}
@@ -269,51 +275,54 @@ export const FestiveFragranceEdit: React.FC<FestiveFragranceEditProps> = ({ onQu
             <div className="lg:col-span-7 relative rounded-2xl overflow-hidden border border-amber-400/40 shadow-xl group">
               <img
                 src="https://res.cloudinary.com/wu9kqgfs/image/upload/v1791713912/luminary/banners/navratri-special-offer-attar.jpg"
-                alt="Navratri Special Offer - Buy 2ml Attar at ₹1 Only"
+                alt="Navratri Special Offer – Any Perfume for Just ₹1"
                 className="w-full h-auto object-cover group-hover:scale-102 transition duration-500"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
               <div className="absolute bottom-3 left-3 text-white text-xs font-semibold bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-amber-400/40">
-                ✨ Navratri & Diwali Maha Utsav Deal
+                🪔 Navratri Special Festival Offer
               </div>
             </div>
 
-            {/* Offer Details & Coupon Box */}
+            {/* Offer Details & Breakdown Box */}
             <div className="lg:col-span-5 flex flex-col items-start gap-4 text-left">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-orange-500/20 text-brand-orange-400 border border-brand-orange-500/40 text-xs font-bold uppercase tracking-wider">
                 <Gift className="w-3.5 h-3.5" />
-                Special Festival Promotion
+                Limited Time Festival Promotion
               </div>
 
               <h3 className="text-2xl sm:text-3xl font-bold font-serif text-amber-100 leading-tight">
-                Buy 2 ml Royal Attar <span className="text-amber-400">(worth ₹249)</span> Just at <span className="text-amber-300 underline decoration-amber-500 font-extrabold">₹1 ONLY</span>!
+                Navratri Special Offer – <span className="text-amber-300 font-extrabold underline decoration-amber-500">Any Perfume for Just ₹1!</span>
               </h3>
 
-              <p className="text-sm text-amber-100/75 leading-relaxed">
-                Add any premium Eau de Parfum (60ml/100ml) or luxury gift box to your cart and claim your festive 2ml pocket attar bottle for just ₹1!
+              <p className="text-sm text-amber-100/85 leading-relaxed">
+                Celebrate Navratri with luxury fragrances! Get any premium Eau de Parfum (60ml/100ml) or Royal Attar for only <strong className="text-white">₹1</strong> (MRP ₹299–₹399). Flat ₹98 delivery charge per order — final amount payable is <strong className="text-amber-300 font-bold">exactly ₹99</strong> for one perfume.
               </p>
 
-              {/* Coupon Code Strip */}
-              <div className="w-full p-4 rounded-2xl bg-black/50 border border-amber-400/40 flex items-center justify-between gap-4">
-                <div>
-                  <div className="text-[10px] uppercase tracking-widest text-amber-300 font-semibold">Festive Coupon Code</div>
-                  <div className="text-lg font-mono font-bold tracking-wider text-white">NAVRATRI1</div>
+              {/* Offer Breakdown Strip */}
+              <div className="w-full p-4 rounded-2xl bg-black/60 border border-amber-400/40 space-y-2">
+                <div className="flex items-center justify-between border-b border-amber-500/20 pb-2">
+                  <span className="text-xs text-amber-200/80">Perfume Price:</span>
+                  <span className="text-sm font-bold text-amber-300">₹1 only</span>
                 </div>
-
-                <button
-                  onClick={handleCopyCode}
-                  className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-xs font-bold uppercase tracking-wider transition flex items-center gap-1.5 shadow-md"
-                >
-                  {copiedCoupon ? <Check className="w-4 h-4 text-green-900" /> : null}
-                  {copiedCoupon ? 'Copied!' : 'Copy Code'}
-                </button>
+                <div className="flex items-center justify-between border-b border-amber-500/20 pb-2">
+                  <span className="text-xs text-amber-200/80">Delivery Charges:</span>
+                  <span className="text-sm font-bold text-white">₹98 (flat per order)</span>
+                </div>
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-xs font-bold uppercase tracking-wider text-amber-400">Total Amount Payable:</span>
+                  <span className="text-base font-extrabold text-amber-300">₹99 ONLY</span>
+                </div>
+                <p className="text-[10px] text-amber-200/60 pt-1">
+                  *Buy multiple perfumes in the same order: ₹1 each, ₹98 delivery applied only once!
+                </p>
               </div>
 
               <Link
                 href="/collections/perfumes"
                 className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 hover:brightness-110 text-brand-green-950 text-sm font-extrabold uppercase tracking-widest shadow-xl transition"
               >
-                Shop Festive Collection
+                Shop All Perfumes @ ₹1
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
