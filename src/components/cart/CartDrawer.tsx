@@ -79,25 +79,17 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           </button>
         </div>
 
-        {/* Free Shipping Progress */}
-        <div className="px-6 py-3 bg-brand-green-50 border-b border-stone-200 text-xs">
-          <div className="flex items-center justify-between text-[11px] mb-1.5 font-medium">
-            <span className="flex items-center gap-1.5 text-slate-700">
-              <Truck className="w-4 h-4 text-brand-green-700" />
-              {freeShippingNeeded === 0 ? (
-                <span className="text-emerald-600 font-bold">You unlocked FREE Express Shipping!</span>
-              ) : (
-                <span>Add <strong className="text-brand-green-700">₹{freeShippingNeeded.toLocaleString()}</strong> for Free Shipping</span>
-              )}
+        {/* Festive Shipping Banner */}
+        <div className="px-4 py-2.5 bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-200 text-xs text-amber-950 flex items-center justify-between">
+          <span className="flex items-center gap-1.5 font-medium text-[11px]">
+            <span className="text-sm">🪔</span>
+            <span>
+              <strong>Navratri Special:</strong> ₹1 Perfumes • Flat <strong>₹98</strong> Delivery per order
             </span>
-            <span className="font-mono text-brand-green-700 font-bold">{Math.round(freeShippingProgress)}%</span>
-          </div>
-          <div className="w-full h-1.5 bg-stone-200 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-brand-green-600 to-emerald-400 transition-all duration-500 rounded-full"
-              style={{ width: `${freeShippingProgress}%` }}
-            />
-          </div>
+          </span>
+          <span className="shrink-0 px-2 py-0.5 rounded-full bg-amber-200/60 text-amber-900 font-bold text-[10px] border border-amber-400/40">
+            FESTIVE DEAL
+          </span>
         </div>
 
         {/* Cart Item List */}

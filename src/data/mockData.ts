@@ -20,11 +20,11 @@ export const INITIAL_SETTINGS: SiteSettings = {
 export const INITIAL_HERO_BANNERS: HeroBanner[] = [
   {
     id: 'hero-navratri-offer',
-    title: 'Navratri Special Offer: Buy Attar @ ₹1 Only',
-    subtitle: 'This Navratri, bring home the divine fragrance of prosperity. Buy 2 ml Attar worth ₹249 at Just ₹1 ONLY.',
-    badge: 'NAVRATRI SPECIAL • LIMITED TIME',
-    discountTag: 'ATTAR @ ₹1 ONLY',
-    buttonText: 'GRAB FESTIVE DEAL',
+    title: 'Navratri Special Offer – Any Perfume for Just ₹1!',
+    subtitle: 'Celebrate Navratri with luxury perfumes! Any perfume for just ₹1 + flat ₹98 delivery (Total ₹99 only).',
+    badge: 'NAVRATRI SPECIAL • ₹1 PERFUME OFFER',
+    discountTag: 'PERFUME @ ₹1 ONLY',
+    buttonText: 'GRAB ₹1 DEAL',
     destinationUrl: '/#festive-edit',
     imageUrl: 'https://res.cloudinary.com/wu9kqgfs/image/upload/v1791713912/luminary/banners/navratri-special-offer-attar.jpg',
     priority: 1,

@@ -314,6 +314,16 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, o
                   Order summary ({shownCart.length})
                 </h4>
 
+                <div className="mb-3 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-950 text-xs flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 font-medium text-[11px]">
+                    <span className="text-sm">🪔</span>
+                    <span><strong>Navratri Offer:</strong> ₹1 Perfumes • ₹98 Flat Delivery</span>
+                  </span>
+                  <span className="shrink-0 px-2 py-0.5 rounded-full bg-amber-200/80 text-amber-900 font-bold text-[10px] border border-amber-300">
+                    APPLIED
+                  </span>
+                </div>
+
                 <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
                   {shownCart.map((item) => (
                     <div key={item.product.id} className="flex items-center justify-between text-sm">
