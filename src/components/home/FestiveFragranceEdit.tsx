@@ -47,31 +47,34 @@ export const FestiveFragranceEdit: React.FC<FestiveFragranceEditProps> = ({ onQu
   };
 
   // Find featured festive items from product list
-  const oneLifeProduct = products.find((p) => p.urlSlug.includes('one-life')) || products[0];
+  const attar2mlProduct =
+    products.find((p) => p.id === 'prod-attar-2ml' || p.urlSlug.includes('2ml') || p.urlSlug.includes('navratri')) ||
+    products.find((p) => p.subcategory === 'Attars') ||
+    products[0];
   const pureExtractProduct = products.find((p) => p.urlSlug.includes('pure-extract')) || products[1];
   const fragranceLandProduct = products.find((p) => p.urlSlug.includes('fragrance-land-eau-de-parfum-100ml')) || products[2];
-  const crownAttarProduct = products.find((p) => p.urlSlug.includes('crown-attar') || p.subcategory === 'Attars') || products[3];
+  const oneLifeProduct = products.find((p) => p.urlSlug.includes('one-life')) || products[0];
 
   const festiveShowcase = [
     {
-      title: 'One Life Eau de Parfum (60 ml)',
-      badge: 'NAVRATRI SPECIAL',
+      title: 'Navratri Special Royal Attar (2 ml)',
+      badge: 'NAVRATRI SPECIAL • ₹1 DEAL',
       accentColor: 'from-amber-500 to-orange-600',
       tag: 'JUST ₹1',
-      notes: 'Amber, Honey & Royal Florals',
-      price: 1,
-      mrp: 299,
-      image: 'https://res.cloudinary.com/wu9kqgfs/image/upload/v1791381663/luminary/products/designer-bottles-1.jpg',
-      product: oneLifeProduct,
+      notes: '100% Pure Concentrated Festive Puja Ittar (2 ml)',
+      price: attar2mlProduct?.sellingPrice ?? 1,
+      mrp: attar2mlProduct?.mrp ?? 249,
+      image: 'https://res.cloudinary.com/wu9kqgfs/image/upload/v1791381631/luminary/products/crown-attar-2.jpg',
+      product: attar2mlProduct,
     },
     {
       title: 'Pure Extract Eau de Parfum (60 ml)',
       badge: 'SAPPHIRE LUXURY',
       accentColor: 'from-blue-500 to-indigo-700',
-      tag: 'JUST ₹1',
+      tag: '35% OFF',
       notes: 'Sweet, Warm & Royal Amber Notes',
-      price: 1,
-      mrp: 299,
+      price: pureExtractProduct?.sellingPrice ?? 1299,
+      mrp: pureExtractProduct?.mrp ?? 1999,
       image: 'https://res.cloudinary.com/wu9kqgfs/image/upload/v1791381664/luminary/products/designer-bottles-2.jpg',
       product: pureExtractProduct,
     },
@@ -79,23 +82,23 @@ export const FestiveFragranceEdit: React.FC<FestiveFragranceEditProps> = ({ onQu
       title: 'Fragrance Land Eau de Parfum (100 ml)',
       badge: 'FESTIVE BESTSELLER',
       accentColor: 'from-amber-400 to-rose-600',
-      tag: 'JUST ₹1',
+      tag: '40% OFF',
       notes: 'Spicy Rose, Citrus & Sacred Woods',
-      price: 1,
-      mrp: 399,
+      price: fragranceLandProduct?.sellingPrice ?? 1799,
+      mrp: fragranceLandProduct?.mrp ?? 2999,
       image: 'https://res.cloudinary.com/wu9kqgfs/image/upload/v1791381611/luminary/products/fragrance-land-100ml-1.jpg',
       product: fragranceLandProduct,
     },
     {
-      title: 'Luminary Crown Attar (Teal & Gold)',
-      badge: 'PURE ROYAL ITTAR',
-      accentColor: 'from-emerald-500 to-teal-700',
-      tag: 'JUST ₹1',
-      notes: '100% Non-Alcoholic Concentrated Puja Ittar',
-      price: 1,
-      mrp: 299,
-      image: 'https://res.cloudinary.com/wu9kqgfs/image/upload/v1791381631/luminary/products/crown-attar-2.jpg',
-      product: crownAttarProduct,
+      title: 'One Life Eau de Parfum (60 ml)',
+      badge: 'FESTIVE COLLECTION',
+      accentColor: 'from-amber-500 to-orange-600',
+      tag: '35% OFF',
+      notes: 'Amber, Honey & Royal Florals',
+      price: oneLifeProduct?.sellingPrice ?? 1299,
+      mrp: oneLifeProduct?.mrp ?? 1999,
+      image: 'https://res.cloudinary.com/wu9kqgfs/image/upload/v1791381663/luminary/products/designer-bottles-1.jpg',
+      product: oneLifeProduct,
     },
   ];
 
