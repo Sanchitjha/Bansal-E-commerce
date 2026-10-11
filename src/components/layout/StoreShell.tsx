@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, FileText } from 'lucide-react';
 import { AnnouncementBar } from '@/components/layout/AnnouncementBar';
 import { Header } from '@/components/layout/Header';
@@ -57,6 +57,14 @@ export const StoreShell: React.FC<{ children: React.ReactNode }> = ({ children }
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [successOrder, setSuccessOrder] = useState<Order | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('admin') || window.location.hash === '#admin') {
+      setIsAdminOpen(true);
+    }
+  }, []);
 
   const actions = useMemo<ShellActions>(
     () => ({
