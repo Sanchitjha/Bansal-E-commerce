@@ -100,12 +100,12 @@ export const HeroBannerSlider: React.FC<HeroBannerSliderProps> = ({ onOpenBulkMo
                   </div>
                 </div>
               ) : (
-                <div className="relative w-full h-[440px] sm:h-[480px] md:h-[520px] lg:h-[580px] xl:h-[620px] overflow-hidden">
+                <div className="relative w-full aspect-[16/9] overflow-hidden bg-[#240e04] flex items-center justify-center">
                   <img
                     src={optimizeImage(banner.imageUrl, 2400)}
                     alt={showText ? '' : banner.title}
                     loading={i === 0 ? 'eager' : 'lazy'}
-                    className="w-full h-full object-cover object-[right_center] md:object-center select-none"
+                    className={`w-full h-full ${showText ? 'object-cover object-[right_center] md:object-center' : 'object-contain'} select-none`}
                   />
 
                   {href && (
