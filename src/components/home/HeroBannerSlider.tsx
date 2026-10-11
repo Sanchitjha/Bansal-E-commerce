@@ -100,12 +100,12 @@ export const HeroBannerSlider: React.FC<HeroBannerSliderProps> = ({ onOpenBulkMo
                   </div>
                 </div>
               ) : (
-                <div className="relative w-full aspect-[16/9] overflow-hidden bg-[#240e04] flex items-center justify-center">
+                <div className={`relative w-full h-[320px] sm:h-[400px] md:h-[480px] lg:h-[520px] overflow-hidden ${showText ? 'bg-[#fcfaf6]' : 'bg-[#240e04]'} flex items-center justify-center`}>
                   <img
                     src={optimizeImage(banner.imageUrl, 2400)}
                     alt={showText ? '' : banner.title}
                     loading={i === 0 ? 'eager' : 'lazy'}
-                    className={`w-full h-full ${showText ? 'object-cover object-[right_center] md:object-center' : 'object-contain'} select-none`}
+                    className={`w-full h-full ${showText ? 'object-cover object-[75%_center] md:object-contain md:object-right' : 'object-contain'} select-none`}
                   />
 
                   {href && (
@@ -115,7 +115,7 @@ export const HeroBannerSlider: React.FC<HeroBannerSliderProps> = ({ onOpenBulkMo
                   {showText ? (
                     <div className="absolute inset-0 flex items-center z-10 pointer-events-none">
                       {/* Smooth gradient backdrop for text clarity on the left */}
-                      <div className="absolute inset-y-0 left-0 w-full sm:w-[55%] md:w-[48%] lg:w-[42%] bg-gradient-to-r from-[#f1e6cf]/90 via-[#f1e6cf]/60 to-transparent pointer-events-none" aria-hidden />
+                      <div className="absolute inset-y-0 left-0 w-full sm:w-[55%] md:w-[48%] lg:w-[42%] bg-gradient-to-r from-[#fcfaf6]/95 via-[#fcfaf6]/80 to-transparent pointer-events-none" aria-hidden />
 
                       <div className="relative w-full max-w-[1400px] mx-auto px-6 sm:px-10 md:px-14 lg:px-20">
                         <div className="max-w-[340px] sm:max-w-[390px] md:max-w-[430px] lg:max-w-[480px] flex flex-col gap-3 sm:gap-4 items-start pointer-events-auto">
