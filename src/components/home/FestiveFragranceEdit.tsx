@@ -278,7 +278,7 @@ export const FestiveFragranceEdit: React.FC<FestiveFragranceEditProps> = ({ onQu
             <div className="lg:col-span-7 relative rounded-2xl overflow-hidden border border-amber-400/40 shadow-xl group">
               <img
                 src="https://res.cloudinary.com/wu9kqgfs/image/upload/v1791713912/luminary/banners/navratri-special-offer-attar.jpg"
-                alt="Navratri Special Offer – Any Perfume for Just ₹1"
+                alt="Navratri Special Offer – Buy 2 ml Attar for Just ₹1"
                 className="w-full h-auto object-cover group-hover:scale-102 transition duration-500"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
@@ -295,18 +295,18 @@ export const FestiveFragranceEdit: React.FC<FestiveFragranceEditProps> = ({ onQu
               </div>
 
               <h3 className="text-2xl sm:text-3xl font-bold font-serif text-amber-100 leading-tight">
-                Navratri Special Offer – <span className="text-amber-300 font-extrabold underline decoration-amber-500">Any Perfume for Just ₹1!</span>
+                Navratri Special Offer – <span className="text-amber-300 font-extrabold underline decoration-amber-500">Buy 2 ml Attar for Just ₹1!</span>
               </h3>
 
               <p className="text-sm text-amber-100/85 leading-relaxed">
-                Celebrate Navratri with luxury fragrances! Get any premium Eau de Parfum (60ml/100ml) or Royal Attar for only <strong className="text-white">₹1</strong> (MRP ₹299–₹399). Flat ₹98 delivery charge per order — final amount payable is <strong className="text-amber-300 font-bold">exactly ₹99</strong> for one perfume.
+                Celebrate Navratri with luxury fragrances! Buy 2 ml pure concentrated Royal Attar (worth ₹249) for only <strong className="text-white">₹1</strong>. Flat ₹98 delivery charge per order — final amount payable is <strong className="text-amber-300 font-bold">exactly ₹99</strong> for one attar.
               </p>
 
               {/* Offer Breakdown Strip */}
               <div className="w-full p-4 rounded-2xl bg-black/60 border border-amber-400/40 space-y-2">
                 <div className="flex items-center justify-between border-b border-amber-500/20 pb-2">
-                  <span className="text-xs text-amber-200/80">Perfume Price:</span>
-                  <span className="text-sm font-bold text-amber-300">₹1 only</span>
+                  <span className="text-xs text-amber-200/80">Attar (2 ml) Price:</span>
+                  <span className="text-sm font-bold text-amber-300">₹1 only (worth ₹249)</span>
                 </div>
                 <div className="flex items-center justify-between border-b border-amber-500/20 pb-2">
                   <span className="text-xs text-amber-200/80">Delivery Charges:</span>
@@ -317,17 +317,28 @@ export const FestiveFragranceEdit: React.FC<FestiveFragranceEditProps> = ({ onQu
                   <span className="text-base font-extrabold text-amber-300">₹99 ONLY</span>
                 </div>
                 <p className="text-[10px] text-amber-200/60 pt-1">
-                  *Buy multiple perfumes in the same order: ₹1 each, ₹98 delivery applied only once!
+                  *₹98 delivery applied once per order. Luxury 60ml & 100ml perfumes available at regular festive prices!
                 </p>
               </div>
 
-              <Link
-                href="/collections/perfumes"
-                className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 hover:brightness-110 text-brand-green-950 text-sm font-extrabold uppercase tracking-widest shadow-xl transition"
-              >
-                Shop All Perfumes @ ₹1
-                <ArrowRight className="w-4 h-4" />
-              </Link>
+              {attar2mlProduct ? (
+                <button
+                  onClick={(e) => handleAddToCart(e, attar2mlProduct)}
+                  disabled={addingId === attar2mlProduct.id}
+                  className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 hover:brightness-110 text-brand-green-950 text-sm font-extrabold uppercase tracking-widest shadow-xl transition disabled:opacity-60"
+                >
+                  <ShoppingBag className="w-4 h-4" />
+                  {addingId === attar2mlProduct.id ? 'Adding to Cart...' : 'Grab 2 ml Attar @ ₹1'}
+                </button>
+              ) : (
+                <Link
+                  href="/product/navratri-special-attar-2ml"
+                  className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 hover:brightness-110 text-brand-green-950 text-sm font-extrabold uppercase tracking-widest shadow-xl transition"
+                >
+                  Grab 2 ml Attar @ ₹1
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              )}
             </div>
           </div>
         </div>
