@@ -40,7 +40,7 @@ export const HeroBannerSlider: React.FC<HeroBannerSliderProps> = ({ onOpenBulkMo
     const product = banner.productId ? products.find((p) => p.id === banner.productId) : undefined;
     if (product) return `/product/${product.urlSlug}`;
     const target = LEGACY_LINKS[banner.destinationUrl] ?? banner.destinationUrl;
-    return /^\/(collections|product|policies)\//.test(target) || target === '/#deals' ? target : null;
+    return /^\/(collections|product|policies)\//.test(target) || target.startsWith('/#') || target.startsWith('#') || target.startsWith('/') ? target : null;
   };
 
   if (banners.length === 0) {
