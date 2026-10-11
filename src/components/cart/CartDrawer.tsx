@@ -84,7 +84,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           <span className="flex items-center gap-1.5 font-medium text-[11px]">
             <span className="text-sm">🪔</span>
             <span>
-              <strong>Navratri Special:</strong> ₹1 Perfumes • Flat <strong>₹98</strong> Delivery per order
+              <strong>Navratri Special:</strong> 2 ml Attar @ ₹1 • Flat <strong>₹98</strong> Delivery
             </span>
           </span>
           <span className="shrink-0 px-2 py-0.5 rounded-full bg-amber-200/60 text-amber-900 font-bold text-[10px] border border-amber-400/40">
