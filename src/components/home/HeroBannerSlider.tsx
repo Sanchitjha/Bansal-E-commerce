@@ -165,13 +165,13 @@ export const HeroBannerSlider: React.FC<HeroBannerSliderProps> = ({ onOpenBulkMo
           >
             <ChevronRight className="w-5 h-5" />
           </button>
-          <div className="absolute z-20 left-1/2 -translate-x-1/2 bottom-4 sm:bottom-6 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/80 backdrop-blur-sm shadow-md">
+          <div className="absolute z-20 left-1/2 -translate-x-1/2 bottom-2 sm:bottom-3 flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/20 shadow-md">
             {banners.map((b, i) => (
               <button
                 key={b.id}
                 onClick={() => setActiveSlide(i)}
                 aria-label={`Go to slide ${i + 1}`}
-                className={`h-1.5 rounded-full transition-all ${i === current ? 'w-8 bg-black' : 'w-4 bg-black/30 hover:bg-black/50'}`}
+                className={`h-1.5 rounded-full transition-all ${i === current ? 'w-6 bg-amber-400' : 'w-2 bg-white/50 hover:bg-white'}`}
               />
             ))}
           </div>
