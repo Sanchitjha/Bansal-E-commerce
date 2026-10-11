@@ -3,6 +3,7 @@
 import React from 'react';
 import { HeroBannerSlider } from '@/components/home/HeroBannerSlider';
 import { TrustStrip } from '@/components/home/TrustStrip';
+import { FestiveFragranceEdit } from '@/components/home/FestiveFragranceEdit';
 import { ProductTabs } from '@/components/home/ProductTabs';
 import { CategorySection } from '@/components/home/CategorySection';
 import { ShopByCategories } from '@/components/home/ShopByCategories';
@@ -29,6 +30,8 @@ export const HomeContent: React.FC = () => {
       <HeroBannerSlider onOpenBulkModal={() => shell.openBulk()} />
 
       <TrustStrip />
+
+      <FestiveFragranceEdit onQuickView={shell.openProduct} />
 
       <ProductTabs onQuickView={shell.openProduct} onOpenBulkModal={shell.openBulk} />
 
