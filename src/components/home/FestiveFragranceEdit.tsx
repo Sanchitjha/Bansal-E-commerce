@@ -48,21 +48,32 @@ export const FestiveFragranceEdit: React.FC<FestiveFragranceEditProps> = ({ onQu
 
   // Find featured festive items from product list
   const oneLifeProduct = products.find((p) => p.urlSlug.includes('one-life')) || products[0];
-  const fragranceLandProduct = products.find((p) => p.urlSlug.includes('fragrance-land-eau-de-parfum-100ml')) || products[1];
-  const giftSetProduct = products.find((p) => p.category === 'fragrance' && (p.urlSlug.includes('gift-set') || p.name.includes('Gift Set'))) || products[2];
+  const pureExtractProduct = products.find((p) => p.urlSlug.includes('pure-extract')) || products[1];
+  const fragranceLandProduct = products.find((p) => p.urlSlug.includes('fragrance-land-eau-de-parfum-100ml')) || products[2];
   const crownAttarProduct = products.find((p) => p.urlSlug.includes('crown-attar') || p.subcategory === 'Attars') || products[3];
 
   const festiveShowcase = [
     {
       title: 'One Life Eau de Parfum (60 ml)',
       badge: 'NAVRATRI SPECIAL',
-      accentColor: 'from-amber-500 to-purple-600',
+      accentColor: 'from-amber-500 to-orange-600',
       tag: 'JUST ₹1',
       notes: 'Amber, Honey & Royal Florals',
       price: 1,
       mrp: 299,
-      image: 'https://res.cloudinary.com/wu9kqgfs/image/upload/v1791713915/luminary/products/one-life-purple-box-luxury.jpg',
+      image: 'https://res.cloudinary.com/wu9kqgfs/image/upload/v1791381663/luminary/products/designer-bottles-1.jpg',
       product: oneLifeProduct,
+    },
+    {
+      title: 'Pure Extract Eau de Parfum (60 ml)',
+      badge: 'SAPPHIRE LUXURY',
+      accentColor: 'from-blue-500 to-indigo-700',
+      tag: 'JUST ₹1',
+      notes: 'Sweet, Warm & Royal Amber Notes',
+      price: 1,
+      mrp: 299,
+      image: 'https://res.cloudinary.com/wu9kqgfs/image/upload/v1791381664/luminary/products/designer-bottles-2.jpg',
+      product: pureExtractProduct,
     },
     {
       title: 'Fragrance Land Eau de Parfum (100 ml)',
@@ -76,25 +87,14 @@ export const FestiveFragranceEdit: React.FC<FestiveFragranceEditProps> = ({ onQu
       product: fragranceLandProduct,
     },
     {
-      title: 'Signature Royal Gift Set',
-      badge: 'ROYAL GIFT BOX',
-      accentColor: 'from-purple-500 to-indigo-700',
-      tag: 'JUST ₹1',
-      notes: '2 Sprays + 2 Crown Attars in Box',
-      price: 1,
-      mrp: 399,
-      image: 'https://res.cloudinary.com/wu9kqgfs/image/upload/v1791555868/luminary/products/banner-gift-sets-wide.jpg',
-      product: giftSetProduct,
-    },
-    {
       title: 'Luminary Crown Attar (Teal & Gold)',
-      badge: '100% NON-ALCOHOLIC',
+      badge: 'PURE ROYAL ITTAR',
       accentColor: 'from-emerald-500 to-teal-700',
       tag: 'JUST ₹1',
-      notes: 'Pure Concentrated Puja Oil',
+      notes: '100% Non-Alcoholic Concentrated Puja Ittar',
       price: 1,
       mrp: 299,
-      image: 'https://res.cloudinary.com/wu9kqgfs/image/upload/v1791381631/luminary/products/crown-attar-1.jpg',
+      image: 'https://res.cloudinary.com/wu9kqgfs/image/upload/v1791381631/luminary/products/crown-attar-2.jpg',
       product: crownAttarProduct,
     },
   ];
@@ -190,10 +190,10 @@ export const FestiveFragranceEdit: React.FC<FestiveFragranceEditProps> = ({ onQu
                 </span>
               </div>
 
-              {/* Arch Alcove with Velvet Pedestal Backdrop */}
-              <div className="relative w-full aspect-[4/5] rounded-t-[90px] rounded-b-2xl overflow-hidden bg-gradient-to-b from-[#240e04] via-[#1a0802] to-[#2d1205] border border-amber-500/30 flex items-center justify-center p-3 shadow-inner">
-                {/* Golden Halo Spotlight inside Arch */}
-                <div className="absolute inset-0 bg-radial-gradient from-amber-500/25 via-transparent to-transparent opacity-70 group-hover:opacity-100 transition duration-500" />
+              {/* Arch Alcove with Illuminated Pedestal Backdrop */}
+              <div className="relative w-full aspect-[4/5] rounded-t-[90px] rounded-b-2xl overflow-hidden bg-white border-2 border-amber-400/60 flex items-center justify-center p-3.5 shadow-[0_8px_24px_rgba(0,0,0,0.4)]">
+                {/* Subtle Top Golden Light Spill */}
+                <div className="absolute top-0 inset-x-0 h-16 bg-gradient-to-b from-amber-100/40 to-transparent pointer-events-none" />
 
                 {/* Floating Discount Badge */}
                 <div className="absolute top-3 right-3 z-10 px-2 py-0.5 rounded bg-brand-orange-500 text-white text-[10px] font-extrabold tracking-wide shadow-md">
@@ -204,7 +204,7 @@ export const FestiveFragranceEdit: React.FC<FestiveFragranceEditProps> = ({ onQu
                   src={optimizeImage(item.image, 600)}
                   alt={item.title}
                   loading="lazy"
-                  className="relative z-10 w-full h-full object-contain filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)] group-hover:scale-108 transition-transform duration-500"
+                  className="relative z-10 w-full h-full object-contain filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.2)] group-hover:scale-108 transition-transform duration-500"
                 />
 
                 {/* Quick View Hover Overlay */}
