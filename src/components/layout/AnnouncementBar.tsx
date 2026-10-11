@@ -8,12 +8,10 @@ export const AnnouncementBar: React.FC = () => {
   const { settings } = useLuminary();
 
   const messages = [
-    <>Free delivery on orders above ₹{settings.freeShippingThreshold.toLocaleString('en-IN')}</>,
-    <>Cash on delivery available</>,
-    <>
-      Use code <span className="font-bold text-amber-300">FESTIVE20</span> for 20% off
-    </>,
-    <>Bulk orders: special pricing and GST invoice</>,
+    <>🪔 NAVRATRI SPECIAL OFFER: Any Perfume for Just ₹1! (Flat ₹98 Delivery · Total ₹99 Payable) 🪔</>,
+    <>✨ Special Festive Dhamaka · 100% Authentic Long-Lasting Perfumes at ₹1</>,
+    <>🚚 Flat ₹98 Delivery Across India · Pay Online (UPI/Cards) or Cash on Delivery</>,
+    <>🪔 Multiple Perfumes in 1 Order: ₹1 Per Perfume + Flat ₹98 Delivery Applied Once</>,
   ];
 
   // Each half repeats the messages a few times so it is always wider than the screen, which keeps the loop seamless.
