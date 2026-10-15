@@ -301,7 +301,7 @@ export const LuminaryProvider: React.FC<{ children: React.ReactNode; initialData
       trackAddToCart({
         id: product.sku || product.id,
         name: product.name,
-        price: product.price,
+        price: product.sellingPrice,
         quantity,
       });
       return true;
