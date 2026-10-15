@@ -11,12 +11,39 @@ declare global {
   }
 }
 
+function logToAdminAnalytics(payload: {
+  eventType: 'page_view' | 'product_view' | 'add_to_cart' | 'initiate_checkout' | 'purchase';
+  eventName: string;
+  url?: string;
+  productId?: string;
+  productName?: string;
+  value?: number;
+  metadata?: Record<string, unknown>;
+}) {
+  if (typeof window === 'undefined') return;
+  fetch('/api/analytics/track', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      ...payload,
+      url: payload.url || window.location.pathname,
+    }),
+  }).catch(() => {});
+}
+
 export function track(event: string, data?: object) {
   if (typeof window === 'undefined') return;
   if (data) {
     window.fbq?.('track', event, data);
   } else {
     window.fbq?.('track', event);
+  }
+
+  if (event === 'PageView') {
+    logToAdminAnalytics({
+      eventType: 'page_view',
+      eventName: 'Customer viewed page',
+    });
   }
 }
 
@@ -27,6 +54,14 @@ export function trackViewContent(product: TrackableProduct) {
     content_type: 'product',
     value: product.price,
     currency: 'INR',
+  });
+
+  logToAdminAnalytics({
+    eventType: 'product_view',
+    eventName: `Viewed ${product.name}`,
+    productId: product.id,
+    productName: product.name,
+    value: product.price,
   });
 }
 
@@ -39,6 +74,15 @@ export function trackAddToCart(product: TrackableProduct) {
     content_type: 'product',
     value: product.price * quantity,
     currency: 'INR',
+  });
+
+  logToAdminAnalytics({
+    eventType: 'add_to_cart',
+    eventName: `Added to cart (${quantity}x ${product.name})`,
+    productId: product.id,
+    productName: product.name,
+    value: product.price * quantity,
+    metadata: { quantity },
   });
 }
 
@@ -55,6 +99,13 @@ export function trackInitiateCheckout(
     content_type: 'product',
     value: checkoutTotal,
     currency: 'INR',
+  });
+
+  logToAdminAnalytics({
+    eventType: 'initiate_checkout',
+    eventName: `Checkout initiated for ${products.length} item(s)`,
+    value: checkoutTotal,
+    metadata: { itemCount: products.length },
   });
 }
 
@@ -89,5 +140,12 @@ export function trackPurchase(order: {
       quantity: item.quantity,
     })),
     content_type: 'product',
+  });
+
+  logToAdminAnalytics({
+    eventType: 'purchase',
+    eventName: `Order Confirmed: ${order.id} (₹${order.totalAmount})`,
+    value: order.totalAmount,
+    metadata: { orderId: order.id, itemCount: order.items.length },
   });
 }
