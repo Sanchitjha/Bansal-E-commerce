@@ -48,6 +48,16 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   const currentUnitPrice = getUnitPriceForProduct(product, quantity);
   const totalPrice = currentUnitPrice * quantity;
 
+  useEffect(() => {
+    if (product) {
+      trackViewContent({
+        id: product.sku || product.id,
+        name: product.name,
+        price: product.sellingPrice,
+      });
+    }
+  }, [product?.id, product?.sku, product?.name, product?.sellingPrice]);
+
   const handleAddToCart = async (): Promise<boolean> => {
     const ok = await addToCart(product, quantity);
     if (ok) {
