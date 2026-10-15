@@ -29,6 +29,16 @@ export const ProductPageView: React.FC<{ product: Product }> = ({ product: initi
   const inStock = product.stock > 0;
   const related = products.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4);
 
+  useEffect(() => {
+    if (product) {
+      trackViewContent({
+        id: product.sku || product.id,
+        name: product.name,
+        price: product.price,
+      });
+    }
+  }, [product?.id, product?.sku, product?.name, product?.price]);
+
   const add = async (): Promise<boolean> => {
     const ok = await addToCart(product, quantity);
     if (ok) {
