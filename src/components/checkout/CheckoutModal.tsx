@@ -6,6 +6,7 @@ import confetti from 'canvas-confetti';
 import { CartItem, Order } from '@/types';
 import { useLuminary } from '@/context/LuminaryContext';
 import { INDIAN_STATES, canonicalState } from '@/lib/india';
+import { trackInitiateCheckout, trackPurchase } from '@/lib/metaPixel';
 
 declare global {
   interface Window {
@@ -71,6 +72,20 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, o
     setFormData((f) => ({ ...f, customerName: f.customerName || customer.name, email: f.email || customer.email, phone: f.phone || customer.phone }));
   }, [isOpen, customer]);
 
+  useEffect(() => {
+    if (!isOpen || cart.length === 0) return;
+    const totals = getCartTotals();
+    trackInitiateCheckout(
+      cart.map((item) => ({
+        id: item.product.sku || item.product.id,
+        name: item.product.name,
+        price: item.unitPrice,
+        quantity: item.quantity,
+      })),
+      totals.grandTotal
+    );
+  }, [isOpen]);
+
   const online = paymentOptions.online;
   const codAllowed = paymentOptions.cod && pin?.cod !== false;
 
@@ -123,6 +138,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, o
     try {
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
     } catch {}
+    trackPurchase(order);
     onOrderSuccess(order);
   };
 
