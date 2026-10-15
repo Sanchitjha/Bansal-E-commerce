@@ -19,6 +19,7 @@ import {
 } from '@/types';
 import { DEFAULT_SETTINGS } from '@/lib/default-settings';
 import { computeCartTotals, getUnitPriceForProduct as unitPriceFor } from '@/lib/pricing';
+import { trackAddToCart } from '@/lib/metaPixel';
 
 interface CartTotals {
   subtotal: number;
@@ -297,6 +298,12 @@ export const LuminaryProvider: React.FC<{ children: React.ReactNode; initialData
       });
       setCart(data.items || []);
       setActiveCoupon(data.appliedCoupon || null);
+      trackAddToCart({
+        id: product.sku || product.id,
+        name: product.name,
+        price: product.price,
+        quantity,
+      });
       return true;
     } catch (err) {
       showToast(errorText(err, 'Could not add this item to your cart.'), 'error');

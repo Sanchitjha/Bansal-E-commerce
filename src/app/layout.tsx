@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { Playfair_Display, Poppins } from 'next/font/google';
 import './globals.css';
+import MetaPixel from '@/components/MetaPixel';
 import { LuminaryProvider } from '@/context/LuminaryContext';
 import { getCatalog } from '@/lib/data';
 import { siteUrl } from '@/lib/site';
@@ -56,6 +58,9 @@ export default async function RootLayout({
   return (
     <html lang="en" className={`${playfair.variable} ${poppins.variable}`}>
       <body className="bg-brand-cream text-slate-900 antialiased selection:bg-brand-orange-500 selection:text-white">
+        <Suspense fallback={null}>
+          <MetaPixel />
+        </Suspense>
         <LuminaryProvider initialData={catalog}>{children}</LuminaryProvider>
       </body>
     </html>

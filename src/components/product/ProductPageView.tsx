@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Star, CheckCircle2, AlertCircle, Truck, ShieldCheck, RefreshCw, PlayCircle } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/ui/WhatsAppIcon';
@@ -10,6 +10,7 @@ import { useLuminary } from '@/context/LuminaryContext';
 import { useShell } from '@/components/layout/StoreShell';
 import { ProductReviews } from './ProductReviews';
 import { ProductCard } from '@/components/home/ProductCard';
+import { trackViewContent } from '@/lib/metaPixel';
 
 const CATEGORY_LABEL: Record<string, string> = { fragrance: 'Fragrances', ayurvedic: 'Ayurvedic Care', gadgets: 'Mini Gadgets' };
 
