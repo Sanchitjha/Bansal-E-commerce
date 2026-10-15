@@ -528,6 +528,36 @@ const otpCodeSchema = new Schema<IOtpCode>(
 );
 otpCodeSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
+export interface ITrafficEvent {
+  _id: string;
+  eventType: 'page_view' | 'product_view' | 'add_to_cart' | 'initiate_checkout' | 'purchase';
+  eventName: string;
+  url?: string;
+  productId?: string;
+  productName?: string;
+  value?: number;
+  metadata?: Record<string, unknown>;
+  ip?: string;
+  timestamp: Date;
+}
+
+const trafficEventSchema = new Schema<ITrafficEvent>(
+  {
+    ...idField,
+    eventType: { type: String, required: true, index: true },
+    eventName: { type: String, required: true },
+    url: String,
+    productId: String,
+    productName: String,
+    value: Number,
+    metadata: Schema.Types.Mixed,
+    ip: String,
+    timestamp: { type: Date, default: Date.now, index: true },
+  },
+  options()
+);
+trafficEventSchema.index({ timestamp: -1 });
+
 function register<T>(name: string, schema: Schema<T>): Model<T> {
   return (mongoose.models[name] as Model<T> | undefined) ?? mongoose.model<T>(name, schema);
 }
@@ -549,6 +579,7 @@ const models = {
   OtpCode: register('OtpCode', otpCodeSchema),
   CreatorVideo: register('CreatorVideo', creatorVideoSchema),
   Subscriber: register('Subscriber', subscriberSchema),
+  TrafficEvent: register('TrafficEvent', trafficEventSchema),
 };
 
 /** Connects (once per process) and hands back the models. Always call this instead of importing models directly. */
