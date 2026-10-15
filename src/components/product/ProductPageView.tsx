@@ -34,10 +34,10 @@ export const ProductPageView: React.FC<{ product: Product }> = ({ product: initi
       trackViewContent({
         id: product.sku || product.id,
         name: product.name,
-        price: product.price,
+        price: product.sellingPrice,
       });
     }
-  }, [product?.id, product?.sku, product?.name, product?.price]);
+  }, [product?.id, product?.sku, product?.name, product?.sellingPrice]);
 
   const add = async (): Promise<boolean> => {
     const ok = await addToCart(product, quantity);
