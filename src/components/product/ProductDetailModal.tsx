@@ -19,6 +19,7 @@ import { Product } from '@/types';
 import { optimizeImage, videoPoster } from '@/lib/media';
 import { useLuminary } from '@/context/LuminaryContext';
 import { WhatsAppIcon } from '@/components/ui/WhatsAppIcon';
+import { trackViewContent } from '@/lib/metaPixel';
 
 interface ProductDetailModalProps {
   product: Product | null;
