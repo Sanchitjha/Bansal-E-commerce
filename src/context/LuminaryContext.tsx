@@ -230,7 +230,7 @@ export const LuminaryProvider: React.FC<{ children: React.ReactNode; initialData
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [activeCoupon, setActiveCoupon] = useState<Coupon | null>(null);
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<CategoryType | 'all'>('all');
-  const [paymentOptions, setPaymentOptions] = useState({ online: false, cod: true, email: false });
+  const [paymentOptions, setPaymentOptions] = useState({ online: false, cod: false, email: false });
   const [adminSession, setAdminSession] = useState<AdminSession | null>(null);
   const [adminAuthChecked, setAdminAuthChecked] = useState(false);
   const [customer, setCustomer] = useState<CustomerProfile | null>(null);
@@ -266,7 +266,12 @@ export const LuminaryProvider: React.FC<{ children: React.ReactNode; initialData
   const refreshCart = useCallback(async () => {
     try {
       const data = await apiRequest<CartApiPayload>('/api/cart');
-      setCart(data.items || []);
+      const safeItems = (data.items || []).map((it) => {
+        const lim = getMaxOrderLimit(it.product);
+        const q = Math.max(1, Math.min(it.quantity, lim));
+        return q !== it.quantity ? { ...it, quantity: q, totalPrice: it.unitPrice * q } : it;
+      });
+      setCart(safeItems);
       setActiveCoupon(data.appliedCoupon || null);
     } catch {
       /* keep what we have */
@@ -337,6 +342,19 @@ export const LuminaryProvider: React.FC<{ children: React.ReactNode; initialData
 
   const updateCartQuantity = async (productId: string, quantity: number) => {
     try {
+      const item = cart.find((i) => i.product.id === productId || i.product._id === productId);
+      if (item && quantity > item.quantity) {
+        const lim = getMaxOrderLimit(item.product);
+        if (quantity > lim) {
+          showToast(
+            lim === 1
+              ? `Maximum 1 unit per order allowed for ${item.product.name}.`
+              : `Maximum ${lim} units allowed for ${item.product.name}.`,
+            'info'
+          );
+          return;
+        }
+      }
       const data = await apiRequest<CartApiPayload>('/api/cart', {
         method: 'PATCH',
         body: JSON.stringify({ productId, quantity }),
