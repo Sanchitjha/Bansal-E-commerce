@@ -1,5 +1,5 @@
 import { db } from './models';
-import { computeCartTotals, getUnitPriceForProduct, type PricingLine } from './pricing';
+import { computeCartTotals, getMaxOrderLimit, getUnitPriceForProduct, type PricingLine } from './pricing';
 
 /** Shared shape builder used by the cart, coupon and order routes so they always agree on prices. */
 export async function buildCartPayload(sessionId: string, customerState?: string) {
@@ -11,6 +11,8 @@ export async function buildCartPayload(sessionId: string, customerState?: string
   const productIds = lineItems.map((i) => i.productId);
   const products = productIds.length ? await Product.find({ _id: { $in: productIds } }) : [];
   const productById = new Map(products.map((p) => [p._id, p]));
+
+  let needsDbSync = false;
 
   // A product deleted after being added to a cart simply drops out of it.
   const items = lineItems
@@ -31,18 +33,36 @@ export async function buildCartPayload(sessionId: string, customerState?: string
         }
       }
 
-      const unitPrice = getUnitPriceForProduct(product, i.quantity, i.selectedVariantId);
+      const limit = getMaxOrderLimit(product);
+      const effectiveQty = Math.max(1, Math.min(i.quantity, limit));
+      if (effectiveQty !== i.quantity) {
+        needsDbSync = true;
+      }
+
+      const unitPrice = getUnitPriceForProduct(product, effectiveQty, i.selectedVariantId);
       return {
         product,
-        quantity: i.quantity,
+        quantity: effectiveQty,
         unitPrice,
-        totalPrice: unitPrice * i.quantity,
+        totalPrice: unitPrice * effectiveQty,
         selectedVariantId: i.selectedVariantId || undefined,
         variantName,
         variantSku,
         variantMrp: lineMrp,
       };
     });
+
+  if (needsDbSync && session) {
+    const clampedItems = items.map((it) => ({
+      productId: it.product._id,
+      selectedVariantId: it.selectedVariantId || '',
+      quantity: it.quantity,
+    }));
+    await CartSession.updateOne(
+      { _id: sessionId },
+      { $set: { items: clampedItems } }
+    ).catch(() => {});
+  }
 
   const appliedCoupon = session?.activeCouponCode ? await Coupon.findOne({ code: session.activeCouponCode, isActive: true }) : null;
 
