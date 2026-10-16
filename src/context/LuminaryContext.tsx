@@ -288,10 +288,24 @@ export const LuminaryProvider: React.FC<{ children: React.ReactNode; initialData
       .finally(() => setAdminAuthChecked(true));
   }, [refreshCart, refreshCustomer]);
 
-  const getUnitPriceForProduct = (product: Product, quantity: number): number => unitPriceFor(product, quantity);
+  const getUnitPriceForProduct = (product: Product, quantity: number, selectedVariantId?: string): number =>
+    unitPriceFor(product, quantity, selectedVariantId);
 
   const addToCart = async (product: Product, quantity: number = 1, selectedVariantId?: string): Promise<boolean> => {
     try {
+      const maxLimit = getMaxOrderLimit(product);
+      const existing = cart.find((i) => i.product.id === product.id);
+      const currentQty = existing ? existing.quantity : 0;
+      if (currentQty + quantity > maxLimit) {
+        showToast(
+          maxLimit === 1
+            ? `Maximum 1 unit per order allowed for ${product.name}.`
+            : `Maximum ${maxLimit} units allowed for ${product.name}.`,
+          'info'
+        );
+        if (currentQty >= maxLimit) return false;
+      }
+
       const data = await apiRequest<CartApiPayload>('/api/cart', {
         method: 'POST',
         body: JSON.stringify({ productId: product.id, quantity, selectedVariantId }),
