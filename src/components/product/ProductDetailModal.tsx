@@ -20,6 +20,7 @@ import { optimizeImage, videoPoster } from '@/lib/media';
 import { useLuminary } from '@/context/LuminaryContext';
 import { WhatsAppIcon } from '@/components/ui/WhatsAppIcon';
 import { trackViewContent } from '@/lib/metaPixel';
+import { getMaxOrderLimit } from '@/lib/pricing';
 
 interface ProductDetailModalProps {
   product: Product | null;
@@ -40,26 +41,40 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   const [selectedImage, setSelectedImage] = useState(product.images[0] || '');
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const videos = product.videos ?? [];
+  const [selectedVariantId, setSelectedVariantId] = useState<string>(product.variants?.[0]?.id || '');
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<'desc' | 'specs' | 'shipping' | 'bulk'>('desc');
   const [addedSuccess, setAddedSuccess] = useState(false);
 
+  useEffect(() => {
+    setSelectedVariantId(product.variants?.[0]?.id || '');
+    setSelectedImage(product.images[0] || '');
+    setQuantity(1);
+  }, [product.id]);
+
+  const selectedVariant = product.variants?.find((v) => v.id === selectedVariantId);
+  const activeMrp = selectedVariant?.mrp ?? product.mrp;
+  const activePrice = selectedVariant?.price ?? product.sellingPrice;
+  const activeSku = selectedVariant?.sku ?? product.sku;
+  const activeStock = selectedVariant?.stock ?? product.stock;
+  const maxLimit = getMaxOrderLimit(product);
+
   const isWishlisted = wishlist.includes(product.id);
-  const currentUnitPrice = getUnitPriceForProduct(product, quantity);
+  const currentUnitPrice = getUnitPriceForProduct(product, quantity, selectedVariantId);
   const totalPrice = currentUnitPrice * quantity;
 
   useEffect(() => {
     if (product) {
       trackViewContent({
-        id: product.sku || product.id,
-        name: product.name,
-        price: product.sellingPrice,
+        id: activeSku || product.id,
+        name: selectedVariant ? `${product.name} (${selectedVariant.name})` : product.name,
+        price: currentUnitPrice,
       });
     }
-  }, [product?.id, product?.sku, product?.name, product?.sellingPrice]);
+  }, [product?.id, activeSku, product?.name, currentUnitPrice, selectedVariant]);
 
   const handleAddToCart = async (): Promise<boolean> => {
-    const ok = await addToCart(product, quantity);
+    const ok = await addToCart(product, quantity, selectedVariantId);
     if (ok) {
       setAddedSuccess(true);
       setTimeout(() => setAddedSuccess(false), 2000);
@@ -69,7 +84,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
   const handleWhatsAppChat = () => {
     const message = encodeURIComponent(
-      `Hi Luminary Concierge, I am viewing ${product.name} (SKU: ${product.sku}). Can you assist me with my order?`
+      `Hi Luminary Concierge, I am viewing ${product.name} ${selectedVariant ? `(${selectedVariant.name}) ` : ''}(SKU: ${activeSku}). Can you assist me with my order?`
     );
     window.open(`https://wa.me/${settings.whatsAppNumber}?text=${message}`, '_blank');
   };
@@ -86,27 +101,32 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
         </button>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 p-6 sm:p-8">
-          {/* Left Column: Image Gallery */}
+          {/* Left Column: Image Gallery (Uncropped display) */}
           <div className="md:col-span-6 space-y-4">
-            <div className="relative aspect-square rounded-2xl overflow-hidden bg-stone-50 border border-stone-200">
+            <div className="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-b from-stone-50 via-white to-stone-50 border border-stone-200 p-4 sm:p-6 flex items-center justify-center">
               {selectedVideo ? (
                 <video key={selectedVideo} src={selectedVideo} poster={videoPoster(selectedVideo, 800) ?? optimizeImage(product.images[0], 800)} controls playsInline preload="metadata" className="w-full h-full object-contain bg-black" />
               ) : (
                 <img
                   src={optimizeImage(selectedImage || product.images[0], 800)}
                   alt={product.name}
-                  className="w-full h-full object-cover transition-all duration-500"
+                  className="w-full h-full object-contain drop-shadow-md transition-all duration-500"
                 />
               )}
               <div className="absolute top-3 left-3 flex flex-col gap-1 z-10">
                 {product.discountPercent > 0 && (
                   <span className="px-2.5 py-1 rounded-md bg-rose-600 text-white font-bold text-xs uppercase tracking-wider shadow">
-                    {product.discountPercent}% OFF
+                    {Math.round(((activeMrp - activePrice) / (activeMrp || 1)) * 100)}% OFF
                   </span>
                 )}
                 {product.isBestSeller && (
                   <span className="px-2.5 py-1 rounded-md bg-brand-green-700 text-white font-bold text-xs uppercase tracking-wider shadow">
                     BEST SELLER
+                  </span>
+                )}
+                {maxLimit === 1 && (
+                  <span className="px-2.5 py-1 rounded-md bg-amber-600 text-white font-bold text-xs uppercase tracking-wider shadow">
+                    LIMIT: 1 / ORDER
                   </span>
                 )}
               </div>
@@ -122,11 +142,11 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                       setSelectedImage(img);
                       setSelectedVideo(null);
                     }}
-                    className={`w-16 h-16 rounded-lg overflow-hidden border-2 transition shrink-0 ${
-                      !selectedVideo && selectedImage === img ? 'border-brand-green-600 scale-105' : 'border-stone-200 opacity-60 hover:opacity-100'
+                    className={`w-16 h-16 rounded-lg overflow-hidden border-2 transition shrink-0 bg-stone-50 p-1 flex items-center justify-center ${
+                      !selectedVideo && selectedImage === img ? 'border-brand-green-600 scale-105' : 'border-stone-200 opacity-70 hover:opacity-100'
                     }`}
                   >
-                    <img src={optimizeImage(img, 160)} alt="" className="w-full h-full object-cover" />
+                    <img src={optimizeImage(img, 160)} alt="" className="w-full h-full object-contain" />
                   </button>
                 ))}
                 {videos.map((v) => (
@@ -149,11 +169,11 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-500">
               <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200">
                 <span className="text-slate-500 block">SKU Code</span>
-                <span className="font-mono font-bold text-slate-800">{product.sku}</span>
+                <span className="font-mono font-bold text-slate-800">{activeSku}</span>
               </div>
               <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200">
-                <span className="text-slate-500 block">HSN Code</span>
-                <span className="font-mono font-bold text-slate-800">{product.hsnCode}</span>
+                <span className="text-slate-500 block">{product.netQuantity ? 'Net Quantity' : 'HSN Code'}</span>
+                <span className="font-mono font-bold text-slate-800">{product.netQuantity || product.hsnCode}</span>
               </div>
             </div>
           </div>
@@ -187,6 +207,41 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 Open full product page →
               </a>
 
+              {/* Variant / Size Selection */}
+              {product.variants && product.variants.length > 0 && (
+                <div className="mt-3 p-3 rounded-2xl bg-stone-50 border border-stone-200">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-700 mb-2">
+                    <span>Select Size / Volume / Pack:</span>
+                    <span className="text-brand-green-700 font-semibold">{selectedVariant ? selectedVariant.name : 'Choose an option'}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {product.variants.map((v) => {
+                      const isSelected = selectedVariantId === v.id;
+                      return (
+                        <button
+                          key={v.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedVariantId(v.id);
+                            setQuantity(1);
+                          }}
+                          className={`px-3 py-2 rounded-xl text-xs font-semibold border transition flex items-center gap-2 ${
+                            isSelected
+                              ? 'bg-brand-green-700 text-white border-brand-green-700 shadow-sm'
+                              : 'bg-white text-slate-800 border-stone-200 hover:border-brand-green-600/50'
+                          }`}
+                        >
+                          <span>{v.name}</span>
+                          <span className={isSelected ? 'text-amber-200 font-bold' : 'text-slate-500 font-normal'}>
+                            ₹{v.price.toLocaleString('en-IN')}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Dynamic Pricing Display */}
               <div className="mt-4 p-3 rounded-xl bg-stone-50 border border-stone-200 flex items-center justify-between">
                 <div>
@@ -195,13 +250,13 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                     <span className="font-mono text-2xl font-bold text-brand-green-700">
                       ₹{currentUnitPrice.toLocaleString()}
                     </span>
-                    {product.mrp > currentUnitPrice && (
+                    {activeMrp > currentUnitPrice && (
                       <span className="font-mono text-sm text-slate-500 line-through">
-                        ₹{product.mrp.toLocaleString()}
+                        ₹{activeMrp.toLocaleString()}
                       </span>
                     )}
                   </div>
-                  {quantity > 1 && currentUnitPrice < product.sellingPrice && (
+                  {quantity > 1 && currentUnitPrice < activePrice && (
                     <span className="text-[10px] text-emerald-600 font-bold">
                       ✓ Wholesale Bulk Tier Price Applied!
                     </span>
@@ -210,10 +265,10 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
                 <div className="text-right">
                   <span className="text-[10px] text-slate-500 block">Stock Status</span>
-                  {product.stock > 0 ? (
+                  {activeStock > 0 ? (
                     <span className="text-xs font-bold text-emerald-600 flex items-center gap-1 justify-end">
                       <CheckCircle2 className="w-3.5 h-3.5" />
-                      In Stock ({product.stock} units)
+                      In Stock ({activeStock} units)
                     </span>
                   ) : (
                     <span className="text-xs font-bold text-rose-600 flex items-center gap-1 justify-end">
@@ -242,7 +297,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
                   <div className="grid grid-cols-4 gap-1 text-[11px]">
                     {product.bulkSlabs.map((slab, idx) => {
-                      const savePct = Math.round(((product.sellingPrice - slab.pricePerUnit) / product.sellingPrice) * 100);
+                      const savePct = Math.round(((activePrice - slab.pricePerUnit) / (activePrice || 1)) * 100);
                       return (
                         <div
                           key={idx}
@@ -262,21 +317,22 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   </div>
                   <p className="mt-2 text-[11px] text-slate-600">
                     {quantity} × ₹{currentUnitPrice.toLocaleString('en-IN')} = <strong>₹{(currentUnitPrice * quantity).toLocaleString('en-IN')}</strong>
-                    {currentUnitPrice < product.sellingPrice && (
-                      <span className="text-brand-green-700"> · you save ₹{((product.sellingPrice - currentUnitPrice) * quantity).toLocaleString('en-IN')}</span>
+                    {currentUnitPrice < activePrice && (
+                      <span className="text-brand-green-700"> · you save ₹{((activePrice - currentUnitPrice) * quantity).toLocaleString('en-IN')}</span>
                     )}
                     <span className="text-slate-500"> · GST included</span>
                   </p>
                 </div>
               )}
 
-              {/* Quantity Selector */}
+              {/* Quantity Selector with Strict Order Limit */}
               <div className="mt-4 flex items-center gap-4">
                 <span className="text-xs font-bold text-slate-700">Select Quantity:</span>
                 <div className="flex items-center rounded-lg bg-stone-50 border border-stone-300">
                   <button
                     onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                    className="px-3 py-1.5 text-slate-700 hover:text-brand-green-700 font-bold"
+                    disabled={quantity <= 1}
+                    className="px-3 py-1.5 text-slate-700 hover:text-brand-green-700 font-bold disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     -
                   </button>
@@ -284,15 +340,22 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                     {quantity}
                   </span>
                   <button
-                    onClick={() => setQuantity((q) => Math.min(product.stock, q + 1))}
-                    className="px-3 py-1.5 text-slate-700 hover:text-brand-green-700 font-bold"
+                    onClick={() => setQuantity((q) => Math.min(Math.min(activeStock, maxLimit), q + 1))}
+                    disabled={quantity >= Math.min(activeStock, maxLimit)}
+                    className="px-3 py-1.5 text-slate-700 hover:text-brand-green-700 font-bold disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     +
                   </button>
                 </div>
-                <div className="text-xs text-slate-500 font-mono">
-                  Subtotal: <span className="text-brand-green-700 font-bold">₹{totalPrice.toLocaleString()}</span>
-                </div>
+                {maxLimit === 1 ? (
+                  <span className="text-[11px] font-bold text-rose-600 bg-rose-50 border border-rose-200 px-2 py-1 rounded-md">
+                    ⚡ Offer Limit: Max 1 unit
+                  </span>
+                ) : (
+                  <div className="text-xs text-slate-500 font-mono">
+                    Subtotal: <span className="text-brand-green-700 font-bold">₹{totalPrice.toLocaleString()}</span>
+                  </div>
+                )}
               </div>
             </div>
 

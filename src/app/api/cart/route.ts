@@ -4,6 +4,7 @@ import { attachCartCookie, getExistingCartSessionId, getOrCreateCartSession } fr
 import { addCartItem, clearCartItems, getCartItemQuantity, removeCartItem, setCartItemQuantity } from '@/lib/cart-ops';
 import { badRequest, notFound, serverError } from '@/lib/api-helpers';
 import { buildCartPayload } from '@/lib/cart-response';
+import { getMaxOrderLimit } from '@/lib/pricing';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,6 +33,14 @@ export async function POST(request: NextRequest) {
     const variantKey = typeof selectedVariantId === 'string' ? selectedVariantId : '';
 
     const wantedQty = (await getCartItemQuantity(sessionId, productId, variantKey)) + quantity;
+    const maxLimit = getMaxOrderLimit(product);
+    if (wantedQty > maxLimit) {
+      return badRequest(
+        maxLimit === 1
+          ? `Maximum 1 unit per order allowed for ${product.name}.`
+          : `Maximum ${maxLimit} units allowed for ${product.name}.`
+      );
+    }
     if (product.stock <= 0) return badRequest(`${product.name} is out of stock.`);
     if (wantedQty > product.stock) {
       return badRequest(`Only ${product.stock} unit${product.stock === 1 ? '' : 's'} of ${product.name} available.`);
@@ -59,8 +68,16 @@ export async function PATCH(request: NextRequest) {
 
     if (quantity > 0) {
       const { Product } = await db();
-      const product = await Product.findById(productId).select('name stock');
+      const product = await Product.findById(productId);
       if (!product) return notFound('Product not found');
+      const maxLimit = getMaxOrderLimit(product);
+      if (quantity > maxLimit) {
+        return badRequest(
+          maxLimit === 1
+            ? `Maximum 1 unit per order allowed for ${product.name}.`
+            : `Maximum ${maxLimit} units allowed for ${product.name}.`
+        );
+      }
       if (quantity > product.stock) {
         return badRequest(`Only ${product.stock} unit${product.stock === 1 ? '' : 's'} of ${product.name} available.`);
       }

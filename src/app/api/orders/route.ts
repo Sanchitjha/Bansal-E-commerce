@@ -13,6 +13,7 @@ import { OrderError, cancelPendingOrder, newAccessToken, newOrderId, releaseExpi
 import { createRazorpayOrder, razorpayConfigured, razorpayKeyId } from '@/lib/payments';
 import { isPincodeBlocked } from '@/lib/pincode';
 import { PAYMENT_METHODS, isOneOf } from '@/lib/validators';
+import { getMaxOrderLimit } from '@/lib/pricing';
 
 export const dynamic = 'force-dynamic';
 
@@ -80,6 +81,14 @@ export async function POST(request: NextRequest) {
       if (item.product.status !== 'active') {
         return badRequest(`${item.product.name} is no longer available. Please remove it from your cart.`);
       }
+      const maxLimit = getMaxOrderLimit(item.product);
+      if (item.quantity > maxLimit) {
+        return badRequest(
+          maxLimit === 1
+            ? `Only 1 unit allowed per order for ${item.product.name}. Please update your cart.`
+            : `Only ${maxLimit} units allowed for ${item.product.name}. Please update your cart.`
+        );
+      }
     }
 
     const totals = cart.totals;
@@ -99,20 +108,26 @@ export async function POST(request: NextRequest) {
     const customer = getCustomerFromRequest(request);
     const isOnline = paymentMethod !== 'COD';
 
-    const orderItems = cart.items.map((item, i) => ({
-      productId: item.product._id,
-      productName: item.product.name,
-      sku: item.product.sku,
-      hsnCode: item.product.hsnCode,
-      gstRate: item.product.gstRate,
-      quantity: item.quantity,
-      mrp: item.product.mrp,
-      sellingPrice: item.product.sellingPrice,
-      unitPrice: item.unitPrice,
-      totalPrice: item.totalPrice,
-      taxableValue: totals.lines[i].taxableValue,
-      gstAmount: totals.lines[i].gstAmount,
-    }));
+    const orderItems = cart.items.map((item, i) => {
+      const displayName = item.variantName ? `${item.product.name} (${item.variantName})` : item.product.name;
+      const displaySku = item.variantSku || item.product.sku;
+      return {
+        productId: item.product._id,
+        productName: displayName,
+        sku: displaySku,
+        hsnCode: item.product.hsnCode,
+        gstRate: item.product.gstRate,
+        quantity: item.quantity,
+        mrp: item.variantMrp ?? item.product.mrp,
+        sellingPrice: item.unitPrice,
+        unitPrice: item.unitPrice,
+        totalPrice: item.totalPrice,
+        taxableValue: totals.lines[i].taxableValue,
+        gstAmount: totals.lines[i].gstAmount,
+        selectedVariantId: item.selectedVariantId,
+        variantName: item.variantName,
+      };
+    });
 
     let createdId: string | null = null;
     for (let attempt = 0; attempt < 3 && !createdId; attempt++) {

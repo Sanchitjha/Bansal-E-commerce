@@ -58,6 +58,8 @@ export interface Product {
   isNewArrival: boolean;
   isHomepagePriority: boolean;
   priorityOrder: number;
+  maxOrderQuantity?: number;
+  netQuantity?: string;
   isBulkAvailable: boolean;
   bulkSlabs: BulkSlab[];
   variants?: ProductVariant[];
@@ -77,6 +79,9 @@ export interface CartItem {
   unitPrice: number;
   totalPrice: number;
   selectedVariantId?: string;
+  variantName?: string;
+  variantSku?: string;
+  variantMrp?: number;
 }
 
 export interface Coupon {
@@ -105,6 +110,8 @@ export interface OrderItem {
   hsnCode?: string;
   gstRate?: number;
   taxableValue?: number;
+  selectedVariantId?: string;
+  variantName?: string;
 }
 
 export type OrderStatus =

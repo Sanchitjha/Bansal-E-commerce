@@ -17,13 +17,30 @@ export async function buildCartPayload(sessionId: string, customerState?: string
     .filter((i) => productById.has(i.productId))
     .map((i) => {
       const product = productById.get(i.productId)!;
-      const unitPrice = getUnitPriceForProduct(product, i.quantity);
+      let variantName: string | undefined;
+      let variantSku: string | undefined;
+      let lineMrp = product.mrp;
+
+      if (i.selectedVariantId && Array.isArray(product.variants)) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const v = (product.variants as any[]).find((x) => String(x.id || x._id) === String(i.selectedVariantId));
+        if (v) {
+          variantName = v.name;
+          variantSku = v.sku;
+          if (typeof v.mrp === 'number' && v.mrp > 0) lineMrp = v.mrp;
+        }
+      }
+
+      const unitPrice = getUnitPriceForProduct(product, i.quantity, i.selectedVariantId);
       return {
         product,
         quantity: i.quantity,
         unitPrice,
         totalPrice: unitPrice * i.quantity,
         selectedVariantId: i.selectedVariantId || undefined,
+        variantName,
+        variantSku,
+        variantMrp: lineMrp,
       };
     });
 
@@ -35,7 +52,7 @@ export async function buildCartPayload(sessionId: string, customerState?: string
     quantity: i.quantity,
     unitPrice: i.unitPrice,
     totalPrice: i.totalPrice,
-    mrp: i.product.mrp,
+    mrp: i.variantMrp ?? i.product.mrp,
     gstRate: i.product.gstRate,
   }));
 

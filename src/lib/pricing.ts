@@ -7,13 +7,43 @@ export interface BulkSlab {
 }
 
 export function getUnitPriceForProduct(
-  product: { isBulkAvailable: boolean; bulkSlabs: unknown; sellingPrice: number },
-  quantity: number
+  product: { isBulkAvailable?: boolean; bulkSlabs?: unknown; sellingPrice: number; variants?: unknown },
+  quantity: number,
+  selectedVariantId?: string
 ): number {
+  let basePrice = product.sellingPrice;
+  if (selectedVariantId && Array.isArray(product.variants) && product.variants.length > 0) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const v = (product.variants as any[]).find((x) => String(x.id || x._id) === String(selectedVariantId));
+    if (v && typeof v.price === 'number' && v.price > 0) {
+      basePrice = v.price;
+    }
+  }
+
   const slabs = (product.bulkSlabs as BulkSlab[] | null) ?? [];
-  if (!product.isBulkAvailable || slabs.length === 0) return product.sellingPrice;
+  if (!product.isBulkAvailable || slabs.length === 0) return basePrice;
   const applicable = [...slabs].sort((a, b) => b.minQty - a.minQty).find((slab) => quantity >= slab.minQty);
-  return applicable ? applicable.pricePerUnit : product.sellingPrice;
+  return applicable ? applicable.pricePerUnit : basePrice;
+}
+
+/** Returns the maximum units of a product allowed in a single order (e.g. 1 for ₹1 promotional offers). */
+export function getMaxOrderLimit(product: {
+  maxOrderQuantity?: number | null;
+  sellingPrice: number;
+  urlSlug?: string;
+  name?: string;
+}): number {
+  if (typeof product.maxOrderQuantity === 'number' && product.maxOrderQuantity > 0) {
+    return product.maxOrderQuantity;
+  }
+  if (
+    product.sellingPrice <= 10 ||
+    (product.urlSlug && product.urlSlug.includes('navratri') && product.sellingPrice <= 50) ||
+    (product.name && product.name.toLowerCase().includes('navratri') && product.sellingPrice <= 50)
+  ) {
+    return 1;
+  }
+  return Infinity;
 }
 
 export interface PricingLine {

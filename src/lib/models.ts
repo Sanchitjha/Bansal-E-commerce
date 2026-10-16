@@ -51,6 +51,8 @@ export interface IProduct {
   isNewArrival: boolean;
   isHomepagePriority: boolean;
   priorityOrder: number;
+  maxOrderQuantity?: number;
+  netQuantity?: string;
   isBulkAvailable: boolean;
   bulkSlabs: IBulkSlab[];
   variants: unknown[];
@@ -92,6 +94,8 @@ const productSchema = new Schema<IProduct>(
     isNewArrival: { type: Boolean, default: false },
     isHomepagePriority: { type: Boolean, default: false },
     priorityOrder: { type: Number, default: 0 },
+    maxOrderQuantity: { type: Number, default: null },
+    netQuantity: { type: String, default: '' },
     isBulkAvailable: { type: Boolean, default: false },
     bulkSlabs: { type: [new Schema({ minQty: Number, pricePerUnit: Number }, { _id: false })], default: [] },
     variants: { type: [Schema.Types.Mixed], default: [] },
