@@ -11,7 +11,7 @@ export const TrustStrip: React.FC = () => {
   const items = [
     { icon: Leaf, title: 'Authentic & pure', sub: 'Quality-checked products' },
     { icon: Truck, title: 'Free delivery', sub: `On orders above ₹${settings.freeShippingThreshold.toLocaleString('en-IN')}` },
-    { icon: Lock, title: 'Secure payments', sub: 'UPI, cards and cash on delivery' },
+    { icon: Lock, title: 'Secure payments', sub: 'UPI, cards and netbanking' },
     { icon: FileText, title: 'GST invoice', sub: 'With every order' },
   ];
 
