@@ -59,7 +59,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, o
     state: '',
     pincode: '',
   });
-  const [paymentMethod, setPaymentMethod] = useState<'Razorpay' | 'COD'>('COD');
+  const [paymentMethod, setPaymentMethod] = useState<'Razorpay' | 'COD'>('Razorpay');
   const [pin, setPin] = useState<PincodeResult | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -281,7 +281,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, o
                 <p className={`text-xs font-medium ${blocked ? 'text-rose-600' : 'text-brand-green-700'}`}>
                   {blocked
                     ? pin.message || 'We cannot deliver to this pincode.'
-                    : `Delivery in about ${pin.estimatedDays}${pin.cod ? ' · Cash on delivery available' : ' · Online payment only'}`}
+                    : `Delivery in about ${pin.estimatedDays}${pin.cod && codAllowed ? ' · Cash on delivery available' : ' · Online payment only'}`}
                 </p>
               )}
 

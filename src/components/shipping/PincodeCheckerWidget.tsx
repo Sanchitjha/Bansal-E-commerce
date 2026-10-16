@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { MapPin, Truck, CheckCircle2, XCircle } from 'lucide-react';
+import { useLuminary } from '@/context/LuminaryContext';
 
 interface PincodeResult {
   valid: boolean;
@@ -15,6 +16,7 @@ interface PincodeResult {
 }
 
 export const PincodeCheckerWidget: React.FC = () => {
+  const { paymentOptions } = useLuminary();
   const [pincode, setPincode] = useState('');
   const [result, setResult] = useState<PincodeResult | null>(null);
   const [checked, setChecked] = useState('');
@@ -94,9 +96,9 @@ export const PincodeCheckerWidget: React.FC = () => {
                   <span className="font-semibold text-slate-900">{result.estimatedDays}</span>
                 </div>
                 <div>
-                  <span className="block text-[10px] uppercase tracking-wide text-slate-400">Cash on delivery</span>
-                  <span className={`font-semibold ${result.cod ? 'text-brand-green-700' : 'text-slate-500'}`}>
-                    {result.cod ? 'Available' : 'Not available'}
+                  <span className="block text-[10px] uppercase tracking-wide text-slate-400">Payment mode</span>
+                  <span className="font-semibold text-brand-green-700">
+                    {paymentOptions.cod && result.cod ? 'Online & COD' : 'Online (UPI / Cards)'}
                   </span>
                 </div>
               </div>

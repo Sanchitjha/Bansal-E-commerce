@@ -342,7 +342,7 @@ export const LuminaryProvider: React.FC<{ children: React.ReactNode; initialData
 
   const updateCartQuantity = async (productId: string, quantity: number) => {
     try {
-      const item = cart.find((i) => i.product.id === productId || i.product._id === productId);
+      const item = cart.find((i) => i.product.id === productId);
       if (item && quantity > item.quantity) {
         const lim = getMaxOrderLimit(item.product);
         if (quantity > lim) {
