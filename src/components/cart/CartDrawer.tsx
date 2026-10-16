@@ -109,66 +109,91 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               </button>
             </div>
           ) : (
-            cart.map((item) => (
-              <div
-                key={item.product.id}
-                className="p-3.5 rounded-xl bg-stone-50 border border-stone-200 flex gap-3 relative group hover:border-stone-200 transition"
-              >
-                <div className="w-16 h-16 rounded-lg overflow-hidden bg-white border border-stone-200 shrink-0">
-                  <img src={optimizeImage(item.product.images[0], 160)} alt="" className="w-full h-full object-cover" />
-                </div>
+            cart.map((item) => {
+              const itemLimit = getMaxOrderLimit(item.product);
+              const isLimitReached = item.quantity >= itemLimit;
 
-                <div className="flex-1 min-w-0 flex flex-col justify-between">
-                  <div className="flex items-start justify-between gap-2">
-                    <h5 className="font-semibold text-xs text-slate-800 line-clamp-1">
-                      {item.product.name}
-                    </h5>
-                    <button
-                      onClick={() => removeFromCart(item.product.id)}
-                      className="text-slate-500 hover:text-rose-600 transition p-1"
-                      title="Remove"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+              return (
+                <div
+                  key={`${item.product.id}-${item.selectedVariantId || 'default'}`}
+                  className="p-3.5 rounded-xl bg-stone-50 border border-stone-200 flex gap-3 relative group hover:border-stone-200 transition"
+                >
+                  <div className="w-16 h-16 rounded-lg overflow-hidden bg-white border border-stone-200 shrink-0 p-1 flex items-center justify-center">
+                    <img src={optimizeImage(item.product.images[0], 160)} alt="" className="w-full h-full object-contain" />
                   </div>
 
-                  <div className="text-[11px] text-slate-500 font-mono">
-                    SKU: {item.product.sku}
-                  </div>
-
-                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-stone-200">
-                    <div className="flex items-center rounded bg-white border border-stone-200">
+                  <div className="flex-1 min-w-0 flex flex-col justify-between">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <h5 className="font-semibold text-xs text-slate-800 line-clamp-1">
+                          {item.product.name}
+                        </h5>
+                        {item.variantName && (
+                          <span className="inline-block mt-0.5 text-[10px] font-bold text-brand-green-800 bg-brand-green-50 border border-brand-green-200/60 px-1.5 py-0.2 rounded">
+                            Size: {item.variantName}
+                          </span>
+                        )}
+                      </div>
                       <button
-                        onClick={() => updateCartQuantity(item.product.id, item.quantity - 1)}
-                        className="px-2 py-0.5 text-slate-500 hover:text-brand-green-700 font-bold"
+                        onClick={() => removeFromCart(item.product.id)}
+                        className="text-slate-500 hover:text-rose-600 transition p-1"
+                        title="Remove"
                       >
-                        -
-                      </button>
-                      <span className="px-2 font-mono text-xs font-bold text-brand-green-700">
-                        {item.quantity}
-                      </span>
-                      <button
-                        onClick={() => updateCartQuantity(item.product.id, item.quantity + 1)}
-                        className="px-2 py-0.5 text-slate-500 hover:text-brand-green-700 font-bold"
-                      >
-                        +
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
 
-                    <div className="text-right">
-                      <span className="font-mono text-xs font-bold text-brand-green-700">
-                        ₹{item.totalPrice.toLocaleString()}
-                      </span>
-                      {item.quantity > 1 && item.unitPrice < item.product.sellingPrice && (
-                        <span className="block text-[9px] text-emerald-600 font-semibold">
-                          Bulk Tier Applied
+                    <div className="text-[11px] text-slate-500 font-mono">
+                      SKU: {item.variantSku || item.product.sku}
+                    </div>
+
+                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-stone-200">
+                      <div className="flex items-center">
+                        <div className="flex items-center rounded bg-white border border-stone-200">
+                          <button
+                            onClick={() => updateCartQuantity(item.product.id, item.quantity - 1)}
+                            className="px-2 py-0.5 text-slate-500 hover:text-brand-green-700 font-bold"
+                          >
+                            -
+                          </button>
+                          <span className="px-2 font-mono text-xs font-bold text-brand-green-700">
+                            {item.quantity}
+                          </span>
+                          <button
+                            onClick={() => !isLimitReached && updateCartQuantity(item.product.id, item.quantity + 1)}
+                            disabled={isLimitReached}
+                            className={`px-2 py-0.5 font-bold ${
+                              isLimitReached
+                                ? 'text-slate-300 cursor-not-allowed'
+                                : 'text-slate-500 hover:text-brand-green-700'
+                            }`}
+                            title={isLimitReached ? `Limit of ${itemLimit} reached` : 'Increase quantity'}
+                          >
+                            +
+                          </button>
+                        </div>
+                        {itemLimit === 1 && (
+                          <span className="ml-2 text-[10px] font-bold text-amber-700 bg-amber-100/70 border border-amber-300/60 px-1.5 py-0.5 rounded">
+                            Limit 1
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="text-right">
+                        <span className="font-mono text-xs font-bold text-brand-green-700">
+                          ₹{item.totalPrice.toLocaleString()}
                         </span>
-                      )}
+                        {item.quantity > 1 && item.unitPrice < item.product.sellingPrice && (
+                          <span className="block text-[9px] text-emerald-600 font-semibold">
+                            Bulk Tier Applied
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { X, Plus, Trash2, Upload, Film } from 'lucide-react';
 import { useLuminary } from '@/context/LuminaryContext';
-import { BulkSlab, CategoryType, Product } from '@/types';
+import { BulkSlab, CategoryType, Product, ProductVariant } from '@/types';
 import { btnGold, errorBox, errText, inputCls, labelCls } from './ui';
 import { uploadImage, uploadVideo, useUploadEnabled } from './upload';
 
@@ -39,6 +39,8 @@ export const ProductFormModal: React.FC<Props> = ({ product, onClose }) => {
     hsnCode: product?.hsnCode ?? '',
     weightKg: String(product?.weightKg ?? '0.3'),
     dimensionsCm: product?.dimensionsCm ?? '',
+    netQuantity: product?.netQuantity ?? '',
+    maxOrderQuantity: product?.maxOrderQuantity ? String(product.maxOrderQuantity) : '',
     shortDescription: product?.shortDescription ?? '',
     longDescription: product?.longDescription ?? '',
     status: product?.status ?? ('active' as 'active' | 'inactive'),
@@ -53,6 +55,8 @@ export const ProductFormModal: React.FC<Props> = ({ product, onClose }) => {
   });
   const [images, setImages] = useState<string[]>(product?.images?.length ? product.images : ['']);
   const [slabs, setSlabs] = useState<BulkSlab[]>(product?.bulkSlabs ?? []);
+  const [hasVariants, setHasVariants] = useState<boolean>(Boolean(product?.variants && product.variants.length > 0));
+  const [variants, setVariants] = useState<ProductVariant[]>(product?.variants ?? []);
   const [slugTouched, setSlugTouched] = useState(isEdit);
   const uploadEnabled = useUploadEnabled();
   const [videos, setVideos] = useState<string[]>(product?.videos ?? []);
@@ -80,6 +84,55 @@ export const ProductFormModal: React.FC<Props> = ({ product, onClose }) => {
     }
   };
 
+  const addVariant = (preset?: Partial<ProductVariant>) => {
+    const nextNum = variants.length + 1;
+    const defaultName = nextNum === 1 ? '30 ml' : nextNum === 2 ? '60 ml' : '100 ml';
+    const name = preset?.name || defaultName;
+    const baseSku = f.sku.trim() || 'LF';
+    const newV: ProductVariant = {
+      id: 'var-' + Date.now() + '-' + nextNum,
+      name,
+      sku: preset?.sku || `${baseSku}-${slugify(name).toUpperCase()}`,
+      price: preset?.price ?? (Number(f.sellingPrice) || 0),
+      mrp: preset?.mrp ?? (Number(f.mrp) || 0),
+      stock: preset?.stock ?? (Number(f.stock) || 50),
+    };
+    setVariants((prev) => [...prev, newV]);
+  };
+
+  const addPerfumePresets = () => {
+    const baseSku = f.sku ? f.sku.trim() : 'LF-FRAG';
+    const basePrice = Number(f.sellingPrice) || 999;
+    const baseMrp = Number(f.mrp) || 1999;
+    setHasVariants(true);
+    setVariants([
+      {
+        id: 'var-' + Date.now() + '-30',
+        name: '30 ml',
+        sku: `${baseSku}-30ML`,
+        price: Math.round(basePrice * 0.6),
+        mrp: Math.round(baseMrp * 0.6),
+        stock: 50,
+      },
+      {
+        id: 'var-' + Date.now() + '-60',
+        name: '60 ml',
+        sku: `${baseSku}-60ML`,
+        price: basePrice,
+        mrp: baseMrp,
+        stock: 50,
+      },
+      {
+        id: 'var-' + Date.now() + '-100',
+        name: '100 ml',
+        sku: `${baseSku}-100ML`,
+        price: Math.round(basePrice * 1.5),
+        mrp: Math.round(baseMrp * 1.5),
+        stock: 50,
+      },
+    ]);
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -104,6 +157,15 @@ export const ProductFormModal: React.FC<Props> = ({ product, onClose }) => {
     if (!Number.isInteger(lowStockThreshold) || lowStockThreshold < 0) return setError('Low-stock level must be a whole number of 0 or more.');
     if (!Number.isFinite(gstRate) || gstRate < 0 || gstRate > 40) return setError('GST rate must be between 0 and 40.');
     if (cleanImages.length === 0) return setError('Add at least one product image.');
+
+    if (hasVariants) {
+      if (variants.length === 0) return setError('Please add at least one variant, or turn variants off.');
+      for (const v of variants) {
+        if (!v.name.trim()) return setError('Each variant must have a size / name (e.g. 60 ml).');
+        if (!v.price || v.price <= 0) return setError(`Variant "${v.name}" needs a selling price above 0.`);
+      }
+    }
+
     if (f.isBulkAvailable) {
       if (cleanSlabs.length < 2) return setError('Add at least two bulk price tiers, or switch bulk pricing off.');
       if (cleanSlabs.some((s) => !Number.isInteger(s.minQty) || s.minQty < 1 || !(s.pricePerUnit > 0))) return setError('Each bulk tier needs a quantity of 1 or more and a price above 0.');
@@ -135,6 +197,8 @@ export const ProductFormModal: React.FC<Props> = ({ product, onClose }) => {
         lowStockThreshold,
         weightKg,
         dimensionsCm: f.dimensionsCm.trim() || undefined,
+        netQuantity: f.netQuantity.trim() || undefined,
+        maxOrderQuantity: f.maxOrderQuantity ? Math.max(1, Math.round(Number(f.maxOrderQuantity))) : undefined,
         status: f.status,
         isFeatured: f.isFeatured,
         isBestSeller: f.isBestSeller,
@@ -143,7 +207,7 @@ export const ProductFormModal: React.FC<Props> = ({ product, onClose }) => {
         priorityOrder: product?.priorityOrder ?? 99,
         isBulkAvailable: f.isBulkAvailable,
         bulkSlabs: f.isBulkAvailable ? cleanSlabs : [],
-        variants: product?.variants ?? [],
+        variants: hasVariants ? variants : [],
         rating: product?.rating ?? 0,
         reviewsCount: product?.reviewsCount ?? 0,
         seoTitle: f.seoTitle.trim() || undefined,
@@ -245,6 +309,58 @@ export const ProductFormModal: React.FC<Props> = ({ product, onClose }) => {
             </div>
           </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-xl border border-gold-500/25 bg-gold-950/10">
+            <div>
+              <label className={`${labelCls} text-gold-300 font-semibold`}>Net Quantity / Size / Wt (Pcs, ml, g)</label>
+              <input
+                className={inputCls}
+                placeholder="e.g. 100 ml, 60 ml, 2 ml, 1 Pc, 50 g"
+                value={f.netQuantity}
+                onChange={(e) => set('netQuantity', e.target.value)}
+              />
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {['2 ml', '20 ml', '30 ml', '50 ml', '60 ml', '100 ml', '1 Pc', 'Set of 4'].map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => set('netQuantity', preset)}
+                    className="text-[11px] px-2 py-0.5 rounded bg-slate-800 hover:bg-gold-500/20 text-slate-300 hover:text-gold-200 border border-slate-700 transition"
+                  >
+                    {preset}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className={`${labelCls} text-gold-300 font-semibold`}>Max Order Quantity Limit (Per Order)</label>
+              <input
+                type="number"
+                min="1"
+                step="1"
+                className={`${inputCls} font-mono`}
+                placeholder="Unlimited (leave blank) or 1 for ₹1 promo deals"
+                value={f.maxOrderQuantity}
+                onChange={(e) => set('maxOrderQuantity', e.target.value)}
+              />
+              <div className="flex items-center gap-2 mt-2">
+                <button
+                  type="button"
+                  onClick={() => set('maxOrderQuantity', '1')}
+                  className="text-[11px] px-2 py-0.5 rounded bg-rose-950/60 hover:bg-rose-900/60 text-rose-300 border border-rose-800/60 transition"
+                >
+                  Limit: 1 per order (₹1 deals)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => set('maxOrderQuantity', '')}
+                  className="text-[11px] px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition"
+                >
+                  Clear limit
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div>
             <label className={labelCls}>Short description</label>
             <textarea rows={2} className={inputCls} value={f.shortDescription} onChange={(e) => set('shortDescription', e.target.value)} />
@@ -332,7 +448,120 @@ export const ProductFormModal: React.FC<Props> = ({ product, onClose }) => {
               {check('isFeatured', 'Featured')}
               {check('isHomepagePriority', 'Homepage priority')}
               {check('isBulkAvailable', 'Bulk pricing')}
+              <label className="flex items-center gap-2 cursor-pointer text-xs text-gold-300 font-medium select-none">
+                <input
+                  type="checkbox"
+                  checked={hasVariants}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setHasVariants(checked);
+                    if (checked && variants.length === 0) {
+                      addPerfumePresets();
+                    }
+                  }}
+                  className="rounded border-slate-700 bg-obsidian-950 text-gold-500 focus:ring-0"
+                />
+                Multiple sizes / variants (30ml, 60ml, 100ml)
+              </label>
             </div>
+
+            {hasVariants && (
+              <div className="space-y-3 rounded-xl border border-gold-500/30 p-3.5 bg-obsidian-950">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+                  <div>
+                    <label className={`${labelCls} text-gold-300 font-semibold mb-0`}>Product Variants & Different Sizes (30ml, 60ml, 100ml)</label>
+                    <p className="text-[11px] text-slate-400">Each size has its own price, MRP, SKU, and stock count.</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={addPerfumePresets}
+                      className="text-xs px-2.5 py-1 rounded bg-gold-500/10 hover:bg-gold-500/20 text-gold-300 border border-gold-500/30 font-medium transition"
+                    >
+                      Preset 30ml / 60ml / 100ml
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => addVariant()}
+                      className="text-xs px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium flex items-center gap-1 transition"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Add Size
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+                  {variants.map((v, i) => (
+                    <div key={v.id || i} className="p-2.5 rounded-lg border border-slate-800/80 bg-obsidian-900 grid grid-cols-12 gap-2 items-center">
+                      <div className="col-span-3">
+                        <label className="text-[10px] text-slate-400 block mb-0.5">Size / Name (e.g. 60 ml)</label>
+                        <input
+                          className={inputCls}
+                          value={v.name}
+                          placeholder="e.g. 60 ml"
+                          onChange={(e) => setVariants((prev) => prev.map((item, idx) => (idx === i ? { ...item, name: e.target.value } : item)))}
+                        />
+                      </div>
+                      <div className="col-span-3">
+                        <label className="text-[10px] text-slate-400 block mb-0.5">Variant SKU</label>
+                        <input
+                          className={`${inputCls} font-mono`}
+                          value={v.sku}
+                          placeholder="LF-SKU-60ML"
+                          onChange={(e) => setVariants((prev) => prev.map((item, idx) => (idx === i ? { ...item, sku: e.target.value } : item)))}
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="text-[10px] text-slate-400 block mb-0.5">MRP (₹)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="any"
+                          className={`${inputCls} font-mono`}
+                          value={v.mrp || ''}
+                          placeholder="MRP"
+                          onChange={(e) => setVariants((prev) => prev.map((item, idx) => (idx === i ? { ...item, mrp: Number(e.target.value) } : item)))}
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="text-[10px] text-gold-400 block mb-0.5 font-medium">Selling (₹) *</label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="any"
+                          className={`${inputCls} font-mono text-gold-300 font-semibold`}
+                          value={v.price || ''}
+                          placeholder="Price"
+                          onChange={(e) => setVariants((prev) => prev.map((item, idx) => (idx === i ? { ...item, price: Number(e.target.value) } : item)))}
+                        />
+                      </div>
+                      <div className="col-span-1">
+                        <label className="text-[10px] text-slate-400 block mb-0.5">Stock</label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          className={`${inputCls} font-mono`}
+                          value={v.stock ?? ''}
+                          placeholder="50"
+                          onChange={(e) => setVariants((prev) => prev.map((item, idx) => (idx === i ? { ...item, stock: Number(e.target.value) } : item)))}
+                        />
+                      </div>
+                      <div className="col-span-1 flex justify-center pt-3.5">
+                        <button
+                          type="button"
+                          onClick={() => setVariants((prev) => prev.filter((_, idx) => idx !== i))}
+                          className="text-slate-500 hover:text-rose-400 p-1 rounded"
+                          aria-label="Remove variant"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {f.isBulkAvailable && (
               <div className="space-y-2 rounded-xl border border-slate-800 p-3 bg-obsidian-950">
