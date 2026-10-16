@@ -18,7 +18,7 @@ import {
   ReviewItem,
 } from '@/types';
 import { DEFAULT_SETTINGS } from '@/lib/default-settings';
-import { computeCartTotals, getUnitPriceForProduct as unitPriceFor } from '@/lib/pricing';
+import { computeCartTotals, getUnitPriceForProduct as unitPriceFor, getMaxOrderLimit } from '@/lib/pricing';
 import { trackAddToCart } from '@/lib/metaPixel';
 
 interface CartTotals {
@@ -133,7 +133,7 @@ interface LuminaryContextType {
   applyCoupon: (code: string) => Promise<{ success: boolean; message: string }>;
   removeCoupon: () => Promise<void>;
   getCartTotals: () => CartTotals;
-  getUnitPriceForProduct: (product: Product, quantity: number) => number;
+  getUnitPriceForProduct: (product: Product, quantity: number, selectedVariantId?: string) => number;
 
   // Reviews
   addReview: (review: NewReview) => Promise<{ verified: boolean; status: 'approved' | 'pending' }>;

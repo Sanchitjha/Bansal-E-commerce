@@ -11,6 +11,7 @@ import { useShell } from '@/components/layout/StoreShell';
 import { ProductReviews } from './ProductReviews';
 import { ProductCard } from '@/components/home/ProductCard';
 import { trackViewContent } from '@/lib/metaPixel';
+import { getMaxOrderLimit } from '@/lib/pricing';
 
 const CATEGORY_LABEL: Record<string, string> = { fragrance: 'Fragrances', ayurvedic: 'Ayurvedic Care', gadgets: 'Mini Gadgets' };
 
@@ -22,25 +23,39 @@ export const ProductPageView: React.FC<{ product: Product }> = ({ product: initi
   const product = products.find((p) => p.id === initial.id) ?? initial;
   const videos = product.videos ?? [];
   const [active, setActive] = useState<{ type: 'image' | 'video'; url: string }>({ type: 'image', url: product.images[0] ?? '' });
+  const [selectedVariantId, setSelectedVariantId] = useState<string>(product.variants?.[0]?.id || '');
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
 
-  const unitPrice = getUnitPriceForProduct(product, quantity);
-  const inStock = product.stock > 0;
+  useEffect(() => {
+    setSelectedVariantId(product.variants?.[0]?.id || '');
+    setActive({ type: 'image', url: product.images[0] ?? '' });
+    setQuantity(1);
+  }, [product.id]);
+
+  const selectedVariant = product.variants?.find((v) => v.id === selectedVariantId);
+  const activePrice = selectedVariant?.price ?? product.sellingPrice;
+  const activeMrp = selectedVariant?.mrp ?? product.mrp;
+  const activeSku = selectedVariant?.sku ?? product.sku;
+  const activeStock = selectedVariant?.stock ?? product.stock;
+  const maxLimit = getMaxOrderLimit(product);
+
+  const unitPrice = getUnitPriceForProduct(product, quantity, selectedVariantId);
+  const inStock = activeStock > 0;
   const related = products.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4);
 
   useEffect(() => {
     if (product) {
       trackViewContent({
-        id: product.sku || product.id,
-        name: product.name,
-        price: product.sellingPrice,
+        id: activeSku || product.id,
+        name: selectedVariant ? `${product.name} (${selectedVariant.name})` : product.name,
+        price: unitPrice,
       });
     }
-  }, [product?.id, product?.sku, product?.name, product?.sellingPrice]);
+  }, [product?.id, activeSku, product?.name, unitPrice, selectedVariant]);
 
   const add = async (): Promise<boolean> => {
-    const ok = await addToCart(product, quantity);
+    const ok = await addToCart(product, quantity, selectedVariantId);
     if (ok) {
       setAdded(true);
       setTimeout(() => setAdded(false), 1800);
@@ -60,22 +75,23 @@ export const ProductPageView: React.FC<{ product: Product }> = ({ product: initi
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 bg-white rounded-3xl border border-stone-200 p-5 sm:p-8">
         <div className="space-y-3">
-          <div className="aspect-square rounded-2xl overflow-hidden bg-stone-100">
+          {/* Main Uncropped Image Container */}
+          <div className="aspect-square rounded-2xl overflow-hidden bg-gradient-to-b from-stone-50 via-white to-stone-50 border border-stone-200 p-4 sm:p-6 flex items-center justify-center">
             {active.type === 'video' ? (
               <video key={active.url} src={active.url} poster={videoPoster(active.url, 900) ?? optimizeImage(product.images[0], 900)} controls playsInline preload="metadata" className="w-full h-full object-contain bg-black" />
             ) : (
-              <img src={optimizeImage(active.url || product.images[0], 900)} alt={product.name} className="w-full h-full object-cover" />
+              <img src={optimizeImage(active.url || product.images[0], 900)} alt={product.name} className="w-full h-full object-contain drop-shadow-md transition-all duration-300" />
             )}
           </div>
           {(product.images.length > 1 || videos.length > 0) && (
-            <div className="flex gap-2 overflow-x-auto">
+            <div className="flex gap-2 overflow-x-auto pb-1">
               {product.images.map((img) => (
                 <button
                   key={img}
                   onClick={() => setActive({ type: 'image', url: img })}
-                  className={`w-16 h-16 rounded-lg overflow-hidden border-2 shrink-0 ${active.url === img ? 'border-brand-green-600' : 'border-transparent opacity-70 hover:opacity-100'}`}
+                  className={`w-16 h-16 rounded-lg overflow-hidden border-2 shrink-0 bg-stone-50 p-1 flex items-center justify-center ${active.url === img ? 'border-brand-green-600 scale-105' : 'border-stone-200 opacity-70 hover:opacity-100'}`}
                 >
-                  <img src={optimizeImage(img, 160)} alt="" className="w-full h-full object-cover" />
+                  <img src={optimizeImage(img, 160)} alt="" className="w-full h-full object-contain" />
                 </button>
               ))}
               {videos.map((v) => (
@@ -83,7 +99,7 @@ export const ProductPageView: React.FC<{ product: Product }> = ({ product: initi
                   key={v}
                   onClick={() => setActive({ type: 'video', url: v })}
                   aria-label="Play product video"
-                  className={`relative w-16 h-16 rounded-lg overflow-hidden border-2 shrink-0 bg-slate-800 ${active.url === v ? 'border-brand-green-600' : 'border-transparent opacity-80 hover:opacity-100'}`}
+                  className={`relative w-16 h-16 rounded-lg overflow-hidden border-2 shrink-0 bg-slate-800 ${active.url === v ? 'border-brand-green-600 scale-105' : 'border-stone-200 opacity-80 hover:opacity-100'}`}
                 >
                   <img src={videoPoster(v, 160) ?? optimizeImage(product.images[0], 160)} alt="" className="w-full h-full object-cover" />
                   <PlayCircle className="absolute inset-0 m-auto w-6 h-6 text-white drop-shadow" />
@@ -94,9 +110,17 @@ export const ProductPageView: React.FC<{ product: Product }> = ({ product: initi
         </div>
 
         <div className="flex flex-col gap-4">
-          <div className="text-xs font-bold uppercase tracking-wider text-brand-green-600">
-            {product.brand} · {product.subcategory || CATEGORY_LABEL[product.category]}
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-brand-green-600">
+              {product.brand} · {product.subcategory || CATEGORY_LABEL[product.category]}
+            </span>
+            {product.netQuantity && (
+              <span className="text-xs font-bold text-slate-700 bg-stone-100 border border-stone-200 px-2.5 py-0.5 rounded-full">
+                Net Qty: {product.netQuantity}
+              </span>
+            )}
           </div>
+
           <h1 className="text-3xl font-bold text-slate-900 leading-tight">{product.name}</h1>
 
           {product.reviewsCount > 0 ? (
@@ -116,12 +140,47 @@ export const ProductPageView: React.FC<{ product: Product }> = ({ product: initi
 
           <p className="text-slate-600 leading-relaxed">{product.shortDescription}</p>
 
+          {/* Variant Selection Buttons (Sizes / Packs / Volumes) */}
+          {product.variants && product.variants.length > 0 && (
+            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200">
+              <div className="flex items-center justify-between text-xs font-bold text-slate-800 mb-2">
+                <span>Select Size / Volume / Pack:</span>
+                <span className="text-brand-green-700 font-semibold">{selectedVariant ? selectedVariant.name : 'Choose an option'}</span>
+              </div>
+              <div className="flex flex-wrap gap-2.5">
+                {product.variants.map((v) => {
+                  const isSelected = selectedVariantId === v.id;
+                  return (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedVariantId(v.id);
+                        setQuantity(1);
+                      }}
+                      className={`px-4 py-2.5 rounded-xl text-xs font-semibold border transition flex items-center gap-2.5 ${
+                        isSelected
+                          ? 'bg-brand-green-700 text-white border-brand-green-700 shadow-sm'
+                          : 'bg-white text-slate-800 border-stone-200 hover:border-brand-green-600/50'
+                      }`}
+                    >
+                      <span className="font-bold">{v.name}</span>
+                      <span className={isSelected ? 'text-amber-200 font-bold' : 'text-slate-500 font-normal'}>
+                        ₹{v.price.toLocaleString('en-IN')}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <div className="flex items-baseline gap-3">
             <span className="text-3xl font-bold text-slate-900">₹{unitPrice.toLocaleString('en-IN')}</span>
-            {product.mrp > unitPrice && (
+            {activeMrp > unitPrice && (
               <>
-                <span className="text-lg text-slate-400 line-through">₹{product.mrp.toLocaleString('en-IN')}</span>
-                <span className="text-sm font-semibold text-brand-orange-500">{Math.round((1 - unitPrice / product.mrp) * 100)}% off</span>
+                <span className="text-lg text-slate-400 line-through">₹{activeMrp.toLocaleString('en-IN')}</span>
+                <span className="text-sm font-semibold text-brand-orange-500">{Math.round((1 - unitPrice / (activeMrp || 1)) * 100)}% off</span>
               </>
             )}
           </div>
@@ -131,7 +190,7 @@ export const ProductPageView: React.FC<{ product: Product }> = ({ product: initi
             const slabs = [...product.bulkSlabs].sort((a, b) => a.minQty - b.minQty);
             const activeIndex = slabs.reduce((found, slab, i) => (quantity >= slab.minQty ? i : found), 0);
             const money = (n: number) => `₹${n.toLocaleString('en-IN')}`;
-            const saved = (product.sellingPrice - unitPrice) * quantity;
+            const saved = (activePrice - unitPrice) * quantity;
 
             return (
               <div className="rounded-2xl border border-brand-green-200 overflow-hidden">
@@ -149,18 +208,18 @@ export const ProductPageView: React.FC<{ product: Product }> = ({ product: initi
                   </thead>
                   <tbody>
                     {slabs.map((slab, i) => {
-                      const save = product.sellingPrice - slab.pricePerUnit;
+                      const save = activePrice - slab.pricePerUnit;
                       const range = i < slabs.length - 1 ? `${slab.minQty}${slabs[i + 1].minQty - 1 > slab.minQty ? `–${slabs[i + 1].minQty - 1}` : ''}` : `${slab.minQty}+`;
                       return (
                         <tr
                           key={slab.minQty}
-                          onClick={() => setQuantity(Math.min(slab.minQty, Math.max(product.stock, 1)))}
+                          onClick={() => setQuantity(Math.min(slab.minQty, Math.max(activeStock, 1)))}
                           className={`cursor-pointer border-t border-stone-100 ${i === activeIndex ? 'bg-brand-green-50 font-semibold text-slate-900' : 'text-slate-700 hover:bg-stone-50'}`}
                         >
                           <td className="px-4 py-2">{range} {slab.minQty === 1 && i === slabs.length - 1 ? 'pc' : 'pcs'}</td>
                           <td className="py-2">{money(slab.pricePerUnit)}</td>
                           <td className="px-4 py-2 text-right">
-                            {save > 0 ? `${money(save)} (${Math.round((save / product.sellingPrice) * 100)}%)` : '–'}
+                            {save > 0 ? `${money(save)} (${Math.round((save / (activePrice || 1)) * 100)}%)` : '–'}
                           </td>
                         </tr>
                       );
@@ -180,20 +239,39 @@ export const ProductPageView: React.FC<{ product: Product }> = ({ product: initi
             {inStock ? (
               <span className="flex items-center gap-1.5 text-emerald-700">
                 <CheckCircle2 className="w-4 h-4" />
-                {product.stock <= product.lowStockThreshold ? `Only ${product.stock} left` : 'In stock'}
+                {activeStock <= product.lowStockThreshold ? `Only ${activeStock} left` : 'In stock'}
               </span>
             ) : (
               <span className="flex items-center gap-1.5 text-rose-600">
                 <AlertCircle className="w-4 h-4" /> Out of stock
               </span>
             )}
+            {maxLimit === 1 && (
+              <span className="ml-auto text-xs font-bold text-rose-600 bg-rose-50 border border-rose-200 px-3 py-1 rounded-full">
+                ⚡ Limit: 1 unit per order
+              </span>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center rounded-full border border-stone-300">
-              <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="px-4 py-2 text-lg text-slate-600" aria-label="Decrease quantity">−</button>
+              <button
+                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                disabled={quantity <= 1}
+                className="px-4 py-2 text-lg text-slate-600 disabled:opacity-40"
+                aria-label="Decrease quantity"
+              >
+                −
+              </button>
               <span className="px-3 font-semibold min-w-[2ch] text-center">{quantity}</span>
-              <button onClick={() => setQuantity((q) => Math.min(Math.max(product.stock, 1), q + 1))} className="px-4 py-2 text-lg text-slate-600" aria-label="Increase quantity">+</button>
+              <button
+                onClick={() => setQuantity((q) => Math.min(Math.min(activeStock, maxLimit), q + 1))}
+                disabled={quantity >= Math.min(activeStock, maxLimit)}
+                className="px-4 py-2 text-lg text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed"
+                aria-label="Increase quantity"
+              >
+                +
+              </button>
             </div>
             <button
               onClick={add}
@@ -214,7 +292,7 @@ export const ProductPageView: React.FC<{ product: Product }> = ({ product: initi
           </div>
 
           <button
-            onClick={() => window.open(`https://wa.me/${settings.whatsAppNumber}?text=${encodeURIComponent(`Hi, I have a question about ${product.name} (SKU ${product.sku}).`)}`, '_blank')}
+            onClick={() => window.open(`https://wa.me/${settings.whatsAppNumber}?text=${encodeURIComponent(`Hi, I have a question about ${product.name} ${selectedVariant ? `(${selectedVariant.name}) ` : ''}(SKU ${activeSku}).`)}`, '_blank')}
             className="self-start inline-flex items-center gap-2 text-sm font-semibold text-brand-green-700 hover:underline"
           >
             <WhatsAppIcon className="w-4 h-4" /> Ask a question on WhatsApp
@@ -236,8 +314,9 @@ export const ProductPageView: React.FC<{ product: Product }> = ({ product: initi
         <dl className="text-sm space-y-2">
           <h2 className="text-xl font-bold text-brand-green-800 mb-3">Details</h2>
           {[
-            ['SKU', product.sku],
+            ['SKU', activeSku],
             ['HSN code', product.hsnCode],
+            ...(product.netQuantity ? [['Net Quantity', product.netQuantity]] : []),
             ['GST rate', `${product.gstRate}%`],
             ['Weight', `${product.weightKg} kg`],
             ...(product.dimensionsCm ? [['Dimensions', `${product.dimensionsCm} cm`]] : []),
