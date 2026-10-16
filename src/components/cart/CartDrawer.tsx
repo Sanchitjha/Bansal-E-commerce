@@ -5,6 +5,7 @@ import { X, Trash2, Tag, ShoppingBag, ArrowRight, Truck, Check, Layers } from 'l
 import { WhatsAppIcon } from '@/components/ui/WhatsAppIcon';
 import { useLuminary } from '@/context/LuminaryContext';
 import { optimizeImage } from '@/lib/media';
+import { getMaxOrderLimit } from '@/lib/pricing';
 
 interface CartDrawerProps {
   isOpen: boolean;
