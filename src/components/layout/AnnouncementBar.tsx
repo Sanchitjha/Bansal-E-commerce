@@ -10,7 +10,7 @@ export const AnnouncementBar: React.FC = () => {
   const messages = [
     <>🪔 NAVRATRI SPECIAL OFFER: Buy 2 ml Attar for Just ₹1! (Worth ₹249 · Total ₹99 with Delivery) 🪔</>,
     <>✨ Special Festive Dhamaka · 100% Authentic Long-Lasting Pure Attar at ₹1</>,
-    <>🚚 Flat ₹98 Delivery Across India · Pay Online (UPI/Cards) or Cash on Delivery</>,
+    <>🚚 Flat ₹98 Delivery Across India · Instant Online Payment (UPI / Cards / Netbanking)</>,
     <>🪔 Divine Festive Fragrances · Handcrafted Luxury for Navratri & Diwali</>,
   ];
 
