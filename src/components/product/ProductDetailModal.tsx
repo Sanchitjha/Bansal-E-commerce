@@ -23,7 +23,6 @@ import { useLuminary } from '@/context/LuminaryContext';
 import { WhatsAppIcon } from '@/components/ui/WhatsAppIcon';
 import { trackViewContent } from '@/lib/metaPixel';
 import { getMaxOrderLimit } from '@/lib/pricing';
-import { useModalHistory } from '@/hooks/useModalHistory';
 
 interface ProductDetailModalProps {
   product: Product | null;
@@ -38,7 +37,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   onOpenBulkModal,
   onDirectBuy,
 }) => {
-  const { closeDirectly } = useModalHistory(Boolean(product), onClose, 'product-detail');
   const { wishlist, toggleWishlist, addToCart, getUnitPriceForProduct, settings } = useLuminary();
   const [selectedImage, setSelectedImage] = useState(product?.images?.[0] || '');
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
@@ -248,7 +246,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               </p>
               <Link
                 href={`/product/${product.urlSlug}`}
-                onClick={closeDirectly}
+                onClick={onClose}
                 className="inline-block mt-1.5 text-xs font-semibold text-brand-green-700 hover:underline"
               >
                 Open full product page →
