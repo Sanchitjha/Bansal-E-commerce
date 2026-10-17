@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import {
   X,
   Star,
@@ -14,6 +15,7 @@ import {
   CheckCircle2,
   FileText,
   PlayCircle,
+  ArrowLeft,
 } from 'lucide-react';
 import { Product } from '@/types';
 import { optimizeImage, videoPoster } from '@/lib/media';
@@ -21,6 +23,7 @@ import { useLuminary } from '@/context/LuminaryContext';
 import { WhatsAppIcon } from '@/components/ui/WhatsAppIcon';
 import { trackViewContent } from '@/lib/metaPixel';
 import { getMaxOrderLimit } from '@/lib/pricing';
+import { useModalHistory } from '@/hooks/useModalHistory';
 
 interface ProductDetailModalProps {
   product: Product | null;
@@ -35,6 +38,8 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   onOpenBulkModal,
   onDirectBuy,
 }) => {
+  const { closeDirectly } = useModalHistory(Boolean(product), onClose, 'product-detail');
+
   if (!product) return null;
 
   const { wishlist, toggleWishlist, addToCart, getUnitPriceForProduct, settings } = useLuminary();
@@ -90,17 +95,54 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-4xl bg-white border border-stone-200 rounded-3xl shadow-2xl overflow-hidden my-8 animate-fade-in text-slate-900">
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 z-20 p-2 rounded-full bg-white border border-stone-300 text-slate-700 hover:text-brand-green-700 shadow-sm transition"
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm -webkit-overflow-scrolling-touch"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="min-h-full flex items-start sm:items-center justify-center p-0 sm:p-4 text-left">
+        <div
+          className="relative w-full max-w-4xl bg-white sm:border sm:border-stone-200 sm:rounded-3xl shadow-2xl overflow-hidden my-0 sm:my-8 min-h-screen sm:min-h-0 text-slate-900 animate-fade-in flex flex-col"
+          onClick={(e) => e.stopPropagation()}
         >
-          <X className="w-5 h-5" />
-        </button>
+          {/* Sticky Mobile Header Bar */}
+          <div className="sticky top-0 z-40 flex items-center justify-between px-4 py-3 bg-white/95 backdrop-blur-md border-b border-stone-200 sm:hidden shadow-xs">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex items-center gap-1 text-xs font-semibold text-slate-700 active:text-brand-green-700 py-1 px-2 -ml-2 rounded-lg active:bg-stone-100"
+              aria-label="Back to store"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Store</span>
+            </button>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold text-brand-green-700 uppercase tracking-wider truncate max-w-[140px]">
+                {product.category}
+              </span>
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center text-slate-600 active:bg-stone-200 transition"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 p-6 sm:p-8">
+          {/* Desktop Close Button */}
+          <button
+            type="button"
+            onClick={onClose}
+            className="hidden sm:flex absolute top-4 right-4 z-30 p-2.5 rounded-full bg-white/90 hover:bg-white border border-stone-300 text-slate-700 hover:text-brand-green-700 shadow-md transition items-center justify-center"
+            aria-label="Close modal"
+          >
+            <X className="w-5 h-5" />
+          </button>
+
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 p-4 sm:p-8">
           {/* Left Column: Image Gallery (Uncropped display) */}
           <div className="md:col-span-6 space-y-4">
             <div className="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-b from-stone-50 via-white to-stone-50 border border-stone-200 p-4 sm:p-6 flex items-center justify-center">
@@ -203,9 +245,13 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               <p className="text-xs text-slate-700 mt-2 leading-relaxed">
                 {product.shortDescription}
               </p>
-              <a href={`/product/${product.urlSlug}`} className="inline-block mt-1.5 text-xs font-semibold text-brand-green-700 hover:underline">
+              <Link
+                href={`/product/${product.urlSlug}`}
+                onClick={closeDirectly}
+                className="inline-block mt-1.5 text-xs font-semibold text-brand-green-700 hover:underline"
+              >
                 Open full product page →
-              </a>
+              </Link>
 
               {/* Variant / Size Selection */}
               {product.variants && product.variants.length > 0 && (
@@ -468,6 +514,18 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 <p>✓ <strong>Return Policy:</strong> 7-day hassle-free damage replacement guarantee.</p>
               </div>
             )}
+          </div>
+
+          {/* Bottom Close Button for Mobile */}
+          <div className="mt-6 pt-4 border-t border-stone-200 sm:hidden">
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full py-3 rounded-xl bg-stone-200 active:bg-stone-300 text-slate-800 font-semibold text-xs transition flex items-center justify-center gap-2"
+            >
+              <X className="w-4 h-4" />
+              <span>Close Product Details</span>
+            </button>
           </div>
         </div>
       </div>
