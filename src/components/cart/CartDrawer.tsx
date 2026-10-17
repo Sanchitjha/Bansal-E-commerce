@@ -6,6 +6,7 @@ import { WhatsAppIcon } from '@/components/ui/WhatsAppIcon';
 import { useLuminary } from '@/context/LuminaryContext';
 import { optimizeImage } from '@/lib/media';
 import { getMaxOrderLimit } from '@/lib/pricing';
+import { useModalHistory } from '@/hooks/useModalHistory';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   onProceedToCheckout,
   onOpenBulkModal,
 }) => {
+  useModalHistory(isOpen, onClose, 'cart');
   if (!isOpen) return null;
 
   const {
@@ -59,8 +61,16 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/50 backdrop-blur-sm animate-fade-in">
-      <div className="relative w-full max-w-md bg-white border-l border-stone-200 text-slate-900 flex flex-col justify-between shadow-2xl h-full">
+    <div
+      className="fixed inset-0 z-50 flex justify-end bg-slate-900/50 backdrop-blur-sm animate-fade-in"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        className="relative w-full max-w-md bg-white border-l border-stone-200 text-slate-900 flex flex-col justify-between shadow-2xl h-full"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="p-4 sm:p-6 border-b border-stone-200 flex items-center justify-between bg-stone-50">
           <div className="flex items-center gap-2">
