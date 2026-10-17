@@ -250,10 +250,14 @@ export async function POST(request: NextRequest) {
       attachCartCookie(response, sessionId);
       return response;
     } catch (err) {
-      console.error(err);
+      console.error('Failed to create Razorpay order:', err);
       await cancelPendingOrder(order._id, 'Could not start the payment gateway');
       await restoreCartFromOrder(sessionId, order);
-      return NextResponse.json({ error: 'We could not start the payment. Please try again or choose Cash on Delivery.' }, { status: 502 });
+      const isCodPossible = !settings || settings.codEnabled;
+      const message = isCodPossible
+        ? 'We could not start the payment. Please try again or choose Cash on Delivery.'
+        : 'We could not start online payment at this moment. Please try again or complete your order via WhatsApp.';
+      return NextResponse.json({ error: message }, { status: 502 });
     }
   } catch (err) {
     if (err instanceof OrderError) {
