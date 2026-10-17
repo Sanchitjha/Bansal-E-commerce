@@ -66,6 +66,86 @@ export const StoreShell: React.FC<{ children: React.ReactNode }> = ({ children }
     }
   }, []);
 
+  // Centralized Modal Manager (Handles Mobile Back Button & Scroll Lock)
+  const hasActiveModal = Boolean(
+    selectedProduct ||
+    isCartOpen ||
+    isCheckoutOpen ||
+    isBulkModalOpen ||
+    isTrackOrderOpen ||
+    isSearchOpen ||
+    isAdminOpen ||
+    isQuizOpen ||
+    isReviewOpen ||
+    isAccountOpen
+  );
+
+  const modalHistoryActive = useRef(false);
+  const closingViaBack = useRef(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    if (hasActiveModal) {
+      document.body.style.overflow = 'hidden';
+      if (!modalHistoryActive.current) {
+        modalHistoryActive.current = true;
+        try {
+          window.history.pushState({ luminaryModal: true }, '');
+        } catch {}
+      }
+    } else {
+      document.body.style.overflow = '';
+      if (modalHistoryActive.current && !closingViaBack.current) {
+        modalHistoryActive.current = false;
+        try {
+          if (window.history.state?.luminaryModal) {
+            window.history.back();
+          }
+        } catch {}
+      }
+      closingViaBack.current = false;
+    }
+  }, [hasActiveModal]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const onPopState = () => {
+      if (modalHistoryActive.current) {
+        closingViaBack.current = true;
+        modalHistoryActive.current = false;
+        // Close the top active modal without navigating away from the store
+        if (isCheckoutOpen) setIsCheckoutOpen(false);
+        else if (isCartOpen) setIsCartOpen(false);
+        else if (selectedProduct) setSelectedProduct(null);
+        else if (isBulkModalOpen) {
+          setIsBulkModalOpen(false);
+          setBulkProductTarget(null);
+        } else if (isSearchOpen) setIsSearchOpen(false);
+        else if (isQuizOpen) setIsQuizOpen(false);
+        else if (isAccountOpen) setIsAccountOpen(false);
+        else if (isTrackOrderOpen) setIsTrackOrderOpen(false);
+        else if (isReviewOpen) setIsReviewOpen(false);
+        else if (isAdminOpen) setIsAdminOpen(false);
+      }
+    };
+
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [
+    isCheckoutOpen,
+    isCartOpen,
+    selectedProduct,
+    isBulkModalOpen,
+    isSearchOpen,
+    isQuizOpen,
+    isAccountOpen,
+    isTrackOrderOpen,
+    isReviewOpen,
+    isAdminOpen,
+  ]);
+
   const actions = useMemo<ShellActions>(
     () => ({
       openProduct: (p) => setSelectedProduct(p),
