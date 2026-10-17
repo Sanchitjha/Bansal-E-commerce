@@ -16,8 +16,6 @@ export const FragranceQuizModal: React.FC<FragranceQuizModalProps> = ({
   onClose,
   onSelectProduct,
 }) => {
-  if (!isOpen) return null;
-
   const { products, addToCart, formatPrice } = useLuminary();
   const [step, setStep] = useState(1);
   const [answers, setAnswers] = useState({
@@ -26,6 +24,8 @@ export const FragranceQuizModal: React.FC<FragranceQuizModalProps> = ({
     intensity: '',
   });
   const [recommendedProduct, setRecommendedProduct] = useState<Product | null>(null);
+
+  if (!isOpen) return null;
 
   const handleSelectOption = (key: 'occasion' | 'notes' | 'intensity', value: string) => {
     const updated = { ...answers, [key]: value };

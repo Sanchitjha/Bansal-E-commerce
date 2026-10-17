@@ -39,23 +39,24 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   onDirectBuy,
 }) => {
   const { closeDirectly } = useModalHistory(Boolean(product), onClose, 'product-detail');
-
-  if (!product) return null;
-
   const { wishlist, toggleWishlist, addToCart, getUnitPriceForProduct, settings } = useLuminary();
-  const [selectedImage, setSelectedImage] = useState(product.images[0] || '');
+  const [selectedImage, setSelectedImage] = useState(product?.images?.[0] || '');
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
-  const videos = product.videos ?? [];
-  const [selectedVariantId, setSelectedVariantId] = useState<string>(product.variants?.[0]?.id || '');
+  const [selectedVariantId, setSelectedVariantId] = useState<string>(product?.variants?.[0]?.id || '');
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<'desc' | 'specs' | 'shipping' | 'bulk'>('desc');
   const [addedSuccess, setAddedSuccess] = useState(false);
 
   useEffect(() => {
+    if (!product) return;
     setSelectedVariantId(product.variants?.[0]?.id || '');
     setSelectedImage(product.images[0] || '');
     setQuantity(1);
-  }, [product.id]);
+  }, [product?.id]);
+
+  if (!product) return null;
+
+  const videos = product.videos ?? [];
 
   const selectedVariant = product.variants?.find((v) => v.id === selectedVariantId);
   const activeMrp = selectedVariant?.mrp ?? product.mrp;

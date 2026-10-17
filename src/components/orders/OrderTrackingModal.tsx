@@ -10,14 +10,14 @@ interface OrderTrackingModalProps {
 }
 
 export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({ isOpen, onClose }) => {
-  if (!isOpen) return null;
-
   const [searchId, setSearchId] = useState('');
   const [searchPhone, setSearchPhone] = useState('');
   const [searchedOrder, setSearchedOrder] = useState<Order | null>(null);
   const [searched, setSearched] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [lookupError, setLookupError] = useState<string | null>(null);
+
+  if (!isOpen) return null;
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();

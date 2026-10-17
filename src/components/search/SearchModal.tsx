@@ -16,13 +16,13 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   onClose,
   onSelectProduct,
 }) => {
-  if (!isOpen) return null;
-
   const { products } = useLuminary();
   const [query, setQuery] = useState('');
   const [selectedCat, setSelectedCat] = useState<CategoryType | 'all'>('all');
   const [maxPrice, setMaxPrice] = useState<number>(5000);
   const [inStockOnly, setInStockOnly] = useState(false);
+
+  if (!isOpen) return null;
 
   const filteredProducts = products.filter((p) => {
     const matchesQuery =

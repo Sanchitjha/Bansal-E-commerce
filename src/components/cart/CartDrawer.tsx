@@ -22,8 +22,6 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   onOpenBulkModal,
 }) => {
   useModalHistory(isOpen, onClose, 'cart');
-  if (!isOpen) return null;
-
   const {
     cart,
     removeFromCart,
@@ -36,6 +34,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
   const [couponInput, setCouponInput] = useState('');
   const [couponMsg, setCouponMsg] = useState<{ success: boolean; message: string } | null>(null);
+
+  if (!isOpen) return null;
 
   const totals = getCartTotals();
   const freeShippingNeeded = Math.max(0, settings.freeShippingThreshold - totals.subtotal);

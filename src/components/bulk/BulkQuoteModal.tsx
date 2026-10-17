@@ -18,8 +18,6 @@ export const BulkQuoteModal: React.FC<BulkQuoteModalProps> = ({
   preSelectedProduct,
 }) => {
   useModalHistory(isOpen, onClose, 'bulk-quote');
-  if (!isOpen) return null;
-
   const { products, submitBulkEnquiry } = useLuminary();
 
   const [formData, setFormData] = useState({
@@ -34,6 +32,8 @@ export const BulkQuoteModal: React.FC<BulkQuoteModalProps> = ({
   });
 
   const [submittedSuccess, setSubmittedSuccess] = useState(false);
+
+  if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

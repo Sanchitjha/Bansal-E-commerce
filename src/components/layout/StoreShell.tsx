@@ -121,42 +121,60 @@ export const StoreShell: React.FC<{ children: React.ReactNode }> = ({ children }
           />
         )}
 
-        <CartDrawer
-          isOpen={isCartOpen}
-          onClose={() => setIsCartOpen(false)}
-          onProceedToCheckout={() => setIsCheckoutOpen(true)}
-          onOpenBulkModal={() => actions.openBulk()}
-        />
+        {isCartOpen && (
+          <CartDrawer
+            isOpen={isCartOpen}
+            onClose={() => setIsCartOpen(false)}
+            onProceedToCheckout={() => setIsCheckoutOpen(true)}
+            onOpenBulkModal={() => actions.openBulk()}
+          />
+        )}
 
-        <CheckoutModal
-          isOpen={isCheckoutOpen}
-          onClose={() => setIsCheckoutOpen(false)}
-          onOrderSuccess={(order) => {
-            setIsCheckoutOpen(false);
-            setSuccessOrder(order);
-          }}
-        />
+        {isCheckoutOpen && (
+          <CheckoutModal
+            isOpen={isCheckoutOpen}
+            onClose={() => setIsCheckoutOpen(false)}
+            onOrderSuccess={(order) => {
+              setIsCheckoutOpen(false);
+              setSuccessOrder(order);
+            }}
+          />
+        )}
 
-        <BulkQuoteModal
-          isOpen={isBulkModalOpen}
-          onClose={() => {
-            setIsBulkModalOpen(false);
-            setBulkProductTarget(null);
-          }}
-          preSelectedProduct={bulkProductTarget}
-        />
+        {isBulkModalOpen && (
+          <BulkQuoteModal
+            isOpen={isBulkModalOpen}
+            onClose={() => {
+              setIsBulkModalOpen(false);
+              setBulkProductTarget(null);
+            }}
+            preSelectedProduct={bulkProductTarget}
+          />
+        )}
 
-        <OrderTrackingModal isOpen={isTrackOrderOpen} onClose={() => setIsTrackOrderOpen(false)} />
+        {isTrackOrderOpen && (
+          <OrderTrackingModal isOpen={isTrackOrderOpen} onClose={() => setIsTrackOrderOpen(false)} />
+        )}
 
-        <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} onSelectProduct={(p) => setSelectedProduct(p)} />
+        {isSearchOpen && (
+          <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} onSelectProduct={(p) => setSelectedProduct(p)} />
+        )}
 
-        <AccountModal isOpen={isAccountOpen} onClose={() => setIsAccountOpen(false)} />
+        {isAccountOpen && (
+          <AccountModal isOpen={isAccountOpen} onClose={() => setIsAccountOpen(false)} />
+        )}
 
-        <AdminDashboardModal isOpen={isAdminOpen} onClose={() => setIsAdminOpen(false)} />
+        {isAdminOpen && (
+          <AdminDashboardModal isOpen={isAdminOpen} onClose={() => setIsAdminOpen(false)} />
+        )}
 
-        <FragranceQuizModal isOpen={isQuizOpen} onClose={() => setIsQuizOpen(false)} onSelectProduct={(p) => setSelectedProduct(p)} />
+        {isQuizOpen && (
+          <FragranceQuizModal isOpen={isQuizOpen} onClose={() => setIsQuizOpen(false)} onSelectProduct={(p) => setSelectedProduct(p)} />
+        )}
 
-        <SubmitReviewModal isOpen={isReviewOpen} onClose={() => setIsReviewOpen(false)} />
+        {isReviewOpen && (
+          <SubmitReviewModal isOpen={isReviewOpen} onClose={() => setIsReviewOpen(false)} />
+        )}
 
         {successOrder && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
