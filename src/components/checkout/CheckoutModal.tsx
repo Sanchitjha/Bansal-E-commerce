@@ -1,12 +1,14 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { X, ShieldCheck, CreditCard, Lock, MapPin, Banknote, Smartphone } from 'lucide-react';
+import { X, ShieldCheck, CreditCard, Lock, MapPin, Banknote, Smartphone, ArrowLeft } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { CartItem, Order } from '@/types';
 import { useLuminary } from '@/context/LuminaryContext';
 import { INDIAN_STATES, canonicalState } from '@/lib/india';
 import { trackInitiateCheckout, trackPurchase } from '@/lib/metaPixel';
+import { WhatsAppIcon } from '@/components/ui/WhatsAppIcon';
+import { useModalHistory } from '@/hooks/useModalHistory';
 
 declare global {
   interface Window {
@@ -48,7 +50,8 @@ function loadRazorpay(): Promise<boolean> {
 }
 
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, onOrderSuccess }) => {
-  const { getCartTotals, cart, placeOrder, verifyPayment, cancelPayment, paymentOptions, customer, showToast } = useLuminary();
+  useModalHistory(isOpen, onClose, 'checkout');
+  const { getCartTotals, cart, placeOrder, verifyPayment, cancelPayment, paymentOptions, customer, showToast, settings } = useLuminary();
 
   const [formData, setFormData] = useState({
     customerName: '',
@@ -66,6 +69,25 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, o
   const [frozen, setFrozen] = useState<{ cart: CartItem[]; totals: ReturnType<typeof getCartTotals> } | null>(null);
   const paidRef = useRef(false);
   const pinRequest = useRef(0);
+
+  const handleWhatsAppOrder = () => {
+    const currentTotals = frozen?.totals ?? getCartTotals();
+    const currentCart = frozen?.cart ?? cart;
+    const itemsText = currentCart
+      .map((i) => `• ${i.product.name} (Qty: ${i.quantity}) - ₹${i.totalPrice.toLocaleString('en-IN')}`)
+      .join('\n');
+    const address = [formData.shippingAddress, formData.city, formData.state, formData.pincode].filter(Boolean).join(', ');
+    const msg = encodeURIComponent(
+      `Hello Luminary, I want to confirm my order via WhatsApp:\n\n` +
+      `*Customer:* ${formData.customerName || 'Customer'}\n` +
+      `*Phone:* ${formData.phone}\n` +
+      `*Email:* ${formData.email}\n` +
+      `*Address:* ${address || 'Pending'}\n\n` +
+      `*Items:*\n${itemsText}\n\n` +
+      `*Total Payable:* ₹${currentTotals.grandTotal.toLocaleString('en-IN')}`
+    );
+    window.open(`https://wa.me/${settings.whatsAppNumber}?text=${msg}`, '_blank');
+  };
 
   useEffect(() => {
     if (!isOpen || !customer) return;
@@ -210,22 +232,47 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, o
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm overflow-y-auto">
-      <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl overflow-hidden my-8 animate-fade-in">
-        <div className="p-6 border-b border-stone-200 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-brand-green-50 text-brand-green-700 flex items-center justify-center">
-              <Lock className="w-5 h-5" />
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm -webkit-overflow-scrolling-touch"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !isSubmitting) onClose();
+      }}
+    >
+      <div className="min-h-full flex items-start sm:items-center justify-center p-0 sm:p-4 text-left">
+        <div
+          className="relative w-full max-w-3xl bg-white sm:rounded-3xl shadow-2xl overflow-hidden my-0 sm:my-8 min-h-screen sm:min-h-0 animate-fade-in"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Sticky Header Bar */}
+          <div className="sticky top-0 z-30 p-4 sm:p-6 border-b border-stone-200 bg-white/95 backdrop-blur-md flex items-center justify-between shadow-xs">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isSubmitting}
+                className="sm:hidden p-1.5 -ml-1 rounded-lg text-slate-700 active:bg-stone-100 flex items-center gap-1 text-xs font-semibold"
+                aria-label="Back"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-brand-green-50 text-brand-green-700 flex items-center justify-center shrink-0">
+                <Lock className="w-4 h-4 sm:w-5 sm:h-5" />
+              </div>
+              <div>
+                <h3 className="text-base sm:text-lg font-bold text-slate-900">Secure Checkout</h3>
+                <p className="text-[11px] sm:text-xs text-slate-500 hidden sm:block">Your details are sent over an encrypted connection</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-lg font-bold text-slate-900">Secure Checkout</h3>
-              <p className="text-xs text-slate-500">Your details are sent over an encrypted connection</p>
-            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isSubmitting}
+              className="p-2 rounded-full hover:bg-stone-100 text-slate-500 disabled:opacity-40 transition"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <button onClick={onClose} disabled={isSubmitting} className="p-2 rounded-full hover:bg-stone-100 text-slate-500 disabled:opacity-40" aria-label="Close">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
 
         <form onSubmit={handleSubmit} className="p-6 sm:p-8">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
@@ -378,8 +425,35 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, o
                 </div>
               </div>
 
-              <div className="space-y-2">
-                {error && <p className="text-xs text-rose-700 font-medium bg-rose-50 border border-rose-200 rounded-xl py-2 px-3">{error}</p>}
+              <div className="space-y-3">
+                {error && (
+                  <div className="space-y-2 p-3 bg-rose-50 border border-rose-200 rounded-xl">
+                    <p className="text-xs text-rose-700 font-medium leading-relaxed">{error}</p>
+                    {codAllowed && paymentMethod === 'Razorpay' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPaymentMethod('COD');
+                          setError(null);
+                        }}
+                        className="w-full py-2 px-3 rounded-lg bg-amber-100/80 hover:bg-amber-100 border border-amber-300 text-amber-950 text-xs font-semibold transition flex items-center justify-center gap-1.5"
+                      >
+                        <Banknote className="w-4 h-4 text-amber-800" />
+                        <span>Switch to Cash on Delivery</span>
+                      </button>
+                    )}
+                    {settings?.whatsAppNumber && (
+                      <button
+                        type="button"
+                        onClick={handleWhatsAppOrder}
+                        className="w-full py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm transition flex items-center justify-center gap-1.5"
+                      >
+                        <WhatsAppIcon className="w-4 h-4 fill-current" />
+                        <span>Order via WhatsApp (Instant Support)</span>
+                      </button>
+                    )}
+                  </div>
+                )}
                 <button
                   type="submit"
                   disabled={isSubmitting || blocked || noPaymentOption || cart.length === 0}
