@@ -530,5 +530,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
         </div>
       </div>
     </div>
+  </div>
   );
 };
