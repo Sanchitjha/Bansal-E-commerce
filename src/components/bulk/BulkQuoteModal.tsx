@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { X, Layers, Send, CheckCircle2, PhoneCall } from 'lucide-react';
 import { Product } from '@/types';
 import { useLuminary } from '@/context/LuminaryContext';
+import { useModalHistory } from '@/hooks/useModalHistory';
 
 interface BulkQuoteModalProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ export const BulkQuoteModal: React.FC<BulkQuoteModalProps> = ({
   onClose,
   preSelectedProduct,
 }) => {
+  useModalHistory(isOpen, onClose, 'bulk-quote');
   if (!isOpen) return null;
 
   const { products, submitBulkEnquiry } = useLuminary();
@@ -44,8 +46,17 @@ export const BulkQuoteModal: React.FC<BulkQuoteModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-lg bg-white border border-stone-200 rounded-3xl shadow-2xl overflow-hidden animate-fade-in text-slate-900">
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm -webkit-overflow-scrolling-touch"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="min-h-full flex items-start sm:items-center justify-center p-0 sm:p-4 text-left">
+        <div
+          className="relative w-full max-w-lg bg-white border border-stone-200 sm:rounded-3xl shadow-2xl overflow-hidden my-0 sm:my-8 animate-fade-in text-slate-900"
+          onClick={(e) => e.stopPropagation()}
+        >
         <div className="p-6 bg-stone-50 border-b border-stone-200 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-brand-green-50 text-brand-green-700 border border-stone-200">
@@ -203,6 +214,7 @@ export const BulkQuoteModal: React.FC<BulkQuoteModalProps> = ({
             </button>
           </form>
         )}
+        </div>
       </div>
     </div>
   );
