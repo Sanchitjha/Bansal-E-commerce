@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { X, Layers, Send, CheckCircle2, PhoneCall } from 'lucide-react';
 import { Product } from '@/types';
 import { useLuminary } from '@/context/LuminaryContext';
-import { useModalHistory } from '@/hooks/useModalHistory';
 
 interface BulkQuoteModalProps {
   isOpen: boolean;
@@ -17,7 +16,6 @@ export const BulkQuoteModal: React.FC<BulkQuoteModalProps> = ({
   onClose,
   preSelectedProduct,
 }) => {
-  useModalHistory(isOpen, onClose, 'bulk-quote');
   const { products, submitBulkEnquiry } = useLuminary();
 
   const [formData, setFormData] = useState({

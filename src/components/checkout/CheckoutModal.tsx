@@ -8,7 +8,6 @@ import { useLuminary } from '@/context/LuminaryContext';
 import { INDIAN_STATES, canonicalState } from '@/lib/india';
 import { trackInitiateCheckout, trackPurchase } from '@/lib/metaPixel';
 import { WhatsAppIcon } from '@/components/ui/WhatsAppIcon';
-import { useModalHistory } from '@/hooks/useModalHistory';
 
 declare global {
   interface Window {
@@ -50,7 +49,6 @@ function loadRazorpay(): Promise<boolean> {
 }
 
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, onOrderSuccess }) => {
-  useModalHistory(isOpen, onClose, 'checkout');
   const { getCartTotals, cart, placeOrder, verifyPayment, cancelPayment, paymentOptions, customer, showToast, settings } = useLuminary();
 
   const [formData, setFormData] = useState({

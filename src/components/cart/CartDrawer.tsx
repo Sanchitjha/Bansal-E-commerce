@@ -6,7 +6,6 @@ import { WhatsAppIcon } from '@/components/ui/WhatsAppIcon';
 import { useLuminary } from '@/context/LuminaryContext';
 import { optimizeImage } from '@/lib/media';
 import { getMaxOrderLimit } from '@/lib/pricing';
-import { useModalHistory } from '@/hooks/useModalHistory';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -21,7 +20,6 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   onProceedToCheckout,
   onOpenBulkModal,
 }) => {
-  useModalHistory(isOpen, onClose, 'cart');
   const {
     cart,
     removeFromCart,
