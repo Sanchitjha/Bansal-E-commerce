@@ -88,16 +88,23 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           </button>
         </div>
 
-        {/* Festive Shipping Banner */}
-        <div className="px-4 py-2.5 bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-200 text-xs text-amber-950 flex items-center justify-between">
+        {/* Diwali offers and delivery progress */}
+        <div className="px-4 py-2.5 bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-200 text-xs text-amber-950 flex items-center justify-between gap-2">
           <span className="flex items-center gap-1.5 font-medium text-[11px]">
             <span className="text-sm">🪔</span>
             <span>
-              <strong>Navratri Special:</strong> 2 ml Attar @ ₹1 • Flat <strong>₹98</strong> Delivery
+              <strong>Diwali Offers:</strong> 2 ml Attar @ ₹1 • Any Gift Pack @ ₹549
+              {cart.length > 0 && (
+                <span className="block text-amber-800">
+                  {freeShippingNeeded > 0
+                    ? `Add ₹${Math.ceil(freeShippingNeeded).toLocaleString('en-IN')} more for FREE delivery`
+                    : 'You have unlocked FREE delivery'}
+                </span>
+              )}
             </span>
           </span>
           <span className="shrink-0 px-2 py-0.5 rounded-full bg-amber-200/60 text-amber-900 font-bold text-[10px] border border-amber-400/40">
-            FESTIVE DEAL
+            DIWALI
           </span>
         </div>
 

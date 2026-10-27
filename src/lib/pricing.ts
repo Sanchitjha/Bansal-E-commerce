@@ -30,17 +30,11 @@ export function getUnitPriceForProduct(
 export function getMaxOrderLimit(product: {
   maxOrderQuantity?: number | null;
   sellingPrice: number;
-  urlSlug?: string;
-  name?: string;
 }): number {
   if (typeof product.maxOrderQuantity === 'number' && product.maxOrderQuantity > 0) {
     return product.maxOrderQuantity;
   }
-  if (
-    product.sellingPrice <= 10 ||
-    (product.urlSlug && product.urlSlug.includes('navratri') && product.sellingPrice <= 50) ||
-    (product.name && product.name.toLowerCase().includes('navratri') && product.sellingPrice <= 50)
-  ) {
+  if (product.sellingPrice <= 10) {
     return 1;
   }
   return Infinity;

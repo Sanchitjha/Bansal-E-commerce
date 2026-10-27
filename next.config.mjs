@@ -20,6 +20,11 @@ const nextConfig = {
         destination: '/?admin=1',
         permanent: false,
       },
+      {
+        source: '/product/navratri-special-attar-2ml',
+        destination: '/product/diwali-special-attar-2ml',
+        permanent: true,
+      },
     ];
   },
 };

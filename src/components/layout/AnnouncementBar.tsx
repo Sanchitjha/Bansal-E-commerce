@@ -7,11 +7,13 @@ import { useLuminary } from '@/context/LuminaryContext';
 export const AnnouncementBar: React.FC = () => {
   const { settings } = useLuminary();
 
+  const threshold = settings.freeShippingThreshold.toLocaleString('en-IN');
+
   const messages = [
-    <>🪔 NAVRATRI SPECIAL OFFER: Buy 2 ml Attar for Just ₹1! (Worth ₹249 · Total ₹99 with Delivery) 🪔</>,
-    <>✨ Special Festive Dhamaka · 100% Authentic Long-Lasting Pure Attar at ₹1</>,
-    <>🚚 Flat ₹98 Delivery Across India · Instant Online Payment (UPI / Cards / Netbanking)</>,
-    <>🪔 Divine Festive Fragrances · Handcrafted Luxury for Navratri & Diwali</>,
+    <>🪔 DIWALI OFFER: 2 ml Attar (Worth ₹249) Just at ₹1 Only! 🪔</>,
+    <>🎁 DIWALI GIFTING OFFER: Any Gift Pack @ ₹549 (MRP ₹999)</>,
+    <>🚚 Delivery ₹{settings.defaultShippingCharge} · FREE on orders above ₹{threshold} · Instant Online Payment (UPI / Cards / Netbanking)</>,
+    <>✨ Handcrafted Luxury Fragrances · Wishing you a Happy & Fragrant Diwali</>,
   ];
 
   // Each half repeats the messages a few times so it is always wider than the screen, which keeps the loop seamless.

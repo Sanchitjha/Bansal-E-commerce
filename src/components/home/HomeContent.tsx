@@ -3,7 +3,7 @@
 import React from 'react';
 import { HeroBannerSlider } from '@/components/home/HeroBannerSlider';
 import { TrustStrip } from '@/components/home/TrustStrip';
-import { FestiveFragranceEdit } from '@/components/home/FestiveFragranceEdit';
+import { DiwaliOffers } from '@/components/home/DiwaliOffers';
 import { ProductTabs } from '@/components/home/ProductTabs';
 import { CategorySection } from '@/components/home/CategorySection';
 import { ShopByCategories } from '@/components/home/ShopByCategories';
@@ -31,7 +31,7 @@ export const HomeContent: React.FC = () => {
 
       <TrustStrip />
 
-      <FestiveFragranceEdit onQuickView={shell.openProduct} />
+      <DiwaliOffers onQuickView={shell.openProduct} />
 
       <ProductTabs onQuickView={shell.openProduct} onOpenBulkModal={shell.openBulk} />
 
