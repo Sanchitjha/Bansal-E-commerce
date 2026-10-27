@@ -41,7 +41,7 @@ export const INITIAL_HERO_BANNERS: HeroBanner[] = [
     discountTag: 'ANY GIFT PACK @ ₹549',
     buttonText: 'SHOP GIFT PACKS',
     destinationUrl: '/collections/gift-sets',
-    imageUrl: 'https://res.cloudinary.com/wu9kqgfs/image/upload/v1793118926/luminary/banners/diwali-gifting-offer.jpg',
+    imageUrl: 'https://res.cloudinary.com/wu9kqgfs/image/upload/v1793119649/luminary/banners/diwali-gifting-offer-wide.jpg',
     priority: 2,
     isActive: true,
     layout: 'full',
