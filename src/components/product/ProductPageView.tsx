@@ -248,7 +248,7 @@ export const ProductPageView: React.FC<{ product: Product }> = ({ product: initi
             )}
             {maxLimit === 1 && (
               <span className="ml-auto text-xs font-bold text-rose-600 bg-rose-50 border border-rose-200 px-3 py-1 rounded-full">
-                ⚡ Limit: 1 unit per order
+                ⚡ Limit: 1 unit per customer
               </span>
             )}
           </div>

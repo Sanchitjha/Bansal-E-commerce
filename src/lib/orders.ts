@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import type { HydratedDocument } from 'mongoose';
+import type { ClientSession, HydratedDocument } from 'mongoose';
 import { db, type IOrder } from './models';
 import { withTransaction } from './db';
 import { revalidateCatalog } from './data';
@@ -17,6 +17,46 @@ interface StoredItem {
 }
 
 const storedItems = (items: unknown): StoredItem[] => (Array.isArray(items) ? (items as StoredItem[]) : []);
+
+const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * Units of each product this person has already ordered (any order that was not cancelled or failed).
+ * A person is matched by email, phone or customer account, so a new order with any one of them
+ * still counts towards the same person.
+ */
+export async function previouslyOrderedQuantities(
+  who: { email: string; phone: string; customerId?: string | null },
+  productIds: string[],
+  session?: ClientSession
+): Promise<Map<string, number>> {
+  const result = new Map<string, number>();
+  if (productIds.length === 0) return result;
+
+  const m = await db();
+  const person: Record<string, unknown>[] = [{ email: new RegExp(`^${escapeRegex(who.email)}$`, 'i') }, { phone: who.phone }];
+  if (who.customerId) person.push({ customerId: who.customerId });
+
+  const query = m.Order.find({
+    orderStatus: { $ne: 'Cancelled' },
+    paymentStatus: { $ne: 'Failed' },
+    'items.productId': { $in: productIds },
+    $or: person,
+  })
+    .select('items')
+    .lean();
+  if (session) query.session(session);
+
+  const wanted = new Set(productIds);
+  for (const order of await query) {
+    for (const item of storedItems(order.items)) {
+      const id = String(item.productId);
+      if (!wanted.has(id)) continue;
+      result.set(id, (result.get(id) ?? 0) + (Number(item.quantity) || 0));
+    }
+  }
+  return result;
+}
 
 export function newAccessToken(): string {
   return crypto.randomBytes(18).toString('base64url');

@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     if (wantedQty > maxLimit) {
       return badRequest(
         maxLimit === 1
-          ? `Maximum 1 unit per order allowed for ${product.name}.`
+          ? `Maximum 1 unit per customer allowed for ${product.name}.`
           : `Maximum ${maxLimit} units allowed for ${product.name}.`
       );
     }
@@ -74,7 +74,7 @@ export async function PATCH(request: NextRequest) {
       if (quantity > maxLimit) {
         return badRequest(
           maxLimit === 1
-            ? `Maximum 1 unit per order allowed for ${product.name}.`
+            ? `Maximum 1 unit per customer allowed for ${product.name}.`
             : `Maximum ${maxLimit} units allowed for ${product.name}.`
         );
       }

@@ -40,7 +40,7 @@ export const DiwaliOffers: React.FC<DiwaliOffersProps> = ({ onQuickView }) => {
             product: attar,
             badge: 'DIWALI OFFER',
             tag: `JUST ₹${attar.sellingPrice}`,
-            notes: '2 ml pure concentrated attar · 1 per order',
+            notes: '2 ml pure concentrated attar · 1 per customer',
             delivery: `+ ₹${shipping} delivery · Total ₹${attar.sellingPrice + shipping}`,
           },
         ]
@@ -227,7 +227,7 @@ export const DiwaliOffers: React.FC<DiwaliOffersProps> = ({ onQuickView }) => {
                   <span className="text-xs font-bold uppercase tracking-wider text-amber-400">Total payable</span>
                   <span className="font-extrabold text-amber-300">₹{attar.sellingPrice + shipping}</span>
                 </div>
-                <p className="text-[10px] text-amber-200/60 pt-1">Limit of one per order.</p>
+                <p className="text-[10px] text-amber-200/60 pt-1">Limit of one per customer.</p>
               </div>
               <button
                 onClick={(e) => handleAddToCart(e, attar)}

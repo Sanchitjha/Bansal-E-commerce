@@ -332,7 +332,7 @@ export const ProductFormModal: React.FC<Props> = ({ product, onClose }) => {
               </div>
             </div>
             <div>
-              <label className={`${labelCls} text-gold-300 font-semibold`}>Max Order Quantity Limit (Per Order)</label>
+              <label className={`${labelCls} text-gold-300 font-semibold`}>Max Quantity Limit (Per Customer)</label>
               <input
                 type="number"
                 min="1"
@@ -348,7 +348,7 @@ export const ProductFormModal: React.FC<Props> = ({ product, onClose }) => {
                   onClick={() => set('maxOrderQuantity', '1')}
                   className="text-[11px] px-2 py-0.5 rounded bg-rose-950/60 hover:bg-rose-900/60 text-rose-300 border border-rose-800/60 transition"
                 >
-                  Limit: 1 per order (₹1 deals)
+                  Limit: 1 per customer (₹1 deals)
                 </button>
                 <button
                   type="button"
