@@ -21,7 +21,7 @@ export const INITIAL_HERO_BANNERS: HeroBanner[] = [
   {
     id: 'hero-diwali-attar',
     title: 'Diwali Offer – 2 ml Attar (Worth ₹249) Just at ₹1 Only',
-    subtitle: 'Celebrate Diwali with a 2 ml pure Attar worth ₹249 for just ₹1. One per order, delivery charges apply.',
+    subtitle: 'Celebrate Diwali with a 2 ml pure Attar worth ₹249 for just ₹1. One per customer, delivery charges apply.',
     badge: 'DIWALI OFFER • 2 ML ATTAR @ ₹1',
     discountTag: '2 ML ATTAR @ ₹1',
     buttonText: 'GRAB ₹1 ATTAR',
@@ -141,7 +141,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     brand: 'Luminary Fragrance',
     shortDescription: 'Diwali Offer: 2 ml concentrated pure luxury attar roll-on (worth ₹249 @ ₹1 only).',
     longDescription:
-      'Diwali Special Edition! 2 ml pure concentrated non-alcoholic royal attar. Divine long-lasting fragrance created for festive puja, auspicious moments, and daily elegance. Limited to one per order.',
+      'Diwali Special Edition! 2 ml pure concentrated non-alcoholic royal attar. Divine long-lasting fragrance created for festive puja, auspicious moments, and daily elegance. Limited to one per customer.',
     images: [
       'https://res.cloudinary.com/wu9kqgfs/image/upload/v1791381631/luminary/products/crown-attar-2.jpg',
       'https://res.cloudinary.com/wu9kqgfs/image/upload/v1791381633/luminary/products/crown-attar-4.jpg',

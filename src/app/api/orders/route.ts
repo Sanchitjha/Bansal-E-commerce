@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import type { HydratedDocument } from 'mongoose';
+import type { ClientSession, HydratedDocument } from 'mongoose';
 import { db, type IOrder } from '@/lib/models';
 import { isDuplicateKey, withTransaction } from '@/lib/db';
 import { revalidateCatalog } from '@/lib/data';
@@ -9,7 +9,7 @@ import { buildCartPayload } from '@/lib/cart-response';
 import { getCustomerFromRequest } from '@/lib/customer-auth';
 import { canonicalState, isValidEmail, normalizeIndianMobile } from '@/lib/india';
 import { sendOrderPlacedEmails } from '@/lib/order-notify';
-import { OrderError, cancelPendingOrder, newAccessToken, newOrderId, releaseExpiredPendingOrders, restoreCartFromOrder } from '@/lib/orders';
+import { OrderError, cancelPendingOrder, previouslyOrderedQuantities, newAccessToken, newOrderId, releaseExpiredPendingOrders, restoreCartFromOrder } from '@/lib/orders';
 import { createRazorpayOrder, razorpayConfigured, razorpayKeyId } from '@/lib/payments';
 import { isPincodeBlocked } from '@/lib/pincode';
 import { PAYMENT_METHODS, isOneOf } from '@/lib/validators';
@@ -81,15 +81,50 @@ export async function POST(request: NextRequest) {
       if (item.product.status !== 'active') {
         return badRequest(`${item.product.name} is no longer available. Please remove it from your cart.`);
       }
-      const maxLimit = getMaxOrderLimit(item.product);
-      if (item.quantity > maxLimit) {
+    }
+
+    // Limited (offer) products: count every variant line of the same product together.
+    const limitedQty = new Map<string, { name: string; limit: number; quantity: number }>();
+    for (const item of cart.items) {
+      const limit = getMaxOrderLimit(item.product);
+      if (!Number.isFinite(limit)) continue;
+      const entry = limitedQty.get(item.product._id) ?? { name: item.product.name, limit, quantity: 0 };
+      entry.quantity += item.quantity;
+      limitedQty.set(item.product._id, entry);
+    }
+    for (const { name, limit, quantity } of limitedQty.values()) {
+      if (quantity > limit) {
         return badRequest(
-          maxLimit === 1
-            ? `Only 1 unit allowed per order for ${item.product.name}. Please update your cart.`
-            : `Only ${maxLimit} units allowed for ${item.product.name}. Please update your cart.`
+          limit === 1
+            ? `Only 1 unit allowed per customer for ${name}. Please update your cart.`
+            : `Only ${limit} units allowed per customer for ${name}. Please update your cart.`
         );
       }
     }
+
+    const customer = getCustomerFromRequest(request);
+
+    // The limit is per person, not per order: units already ordered earlier count too.
+    const ensureWithinPersonLimit = async (session?: ClientSession) => {
+      if (limitedQty.size === 0) return;
+      const already = await previouslyOrderedQuantities(
+        { email, phone, customerId: customer?.sub ?? null, shippingAddress, pincode },
+        [...limitedQty.keys()],
+        session
+      );
+      for (const [productId, { name, limit, quantity }] of limitedQty) {
+        const before = already.get(productId) ?? 0;
+        if (before + quantity > limit) {
+          throw new OrderError(
+            limit === 1 || before >= limit
+              ? `You have already ordered ${name}. This offer is limited to ${limit === 1 ? '1 unit' : `${limit} units`} per customer. Please remove it from your cart.`
+              : `${name} is limited to ${limit} units per customer and you have already ordered ${before}. Please reduce the quantity.`,
+            409
+          );
+        }
+      }
+    };
+    await ensureWithinPersonLimit();
 
     const totals = cart.totals;
     const coupon = totals.couponDiscount > 0 ? cart.appliedCoupon : null;
@@ -105,7 +140,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const customer = getCustomerFromRequest(request);
     const isOnline = paymentMethod !== 'COD';
 
     const orderItems = cart.items.map((item, i) => {
@@ -133,6 +167,9 @@ export async function POST(request: NextRequest) {
     for (let attempt = 0; attempt < 3 && !createdId; attempt++) {
       try {
         createdId = await withTransaction(async (session) => {
+          // Checked again inside the transaction to narrow the window for two orders placed at the same moment.
+          await ensureWithinPersonLimit(session);
+
           // Reserve stock atomically: the update only matches while enough units remain.
           for (const item of cart.items) {
             const reserved = await m.Product.updateOne(

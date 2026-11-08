@@ -304,7 +304,7 @@ export const LuminaryProvider: React.FC<{ children: React.ReactNode; initialData
       if (currentQty + quantity > maxLimit) {
         showToast(
           maxLimit === 1
-            ? `Maximum 1 unit per order allowed for ${product.name}.`
+            ? `Maximum 1 unit per customer allowed for ${product.name}.`
             : `Maximum ${maxLimit} units allowed for ${product.name}.`,
           'info'
         );
@@ -348,7 +348,7 @@ export const LuminaryProvider: React.FC<{ children: React.ReactNode; initialData
         if (quantity > lim) {
           showToast(
             lim === 1
-              ? `Maximum 1 unit per order allowed for ${item.product.name}.`
+              ? `Maximum 1 unit per customer allowed for ${item.product.name}.`
               : `Maximum ${lim} units allowed for ${item.product.name}.`,
             'info'
           );

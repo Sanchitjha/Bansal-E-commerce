@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import type { HydratedDocument } from 'mongoose';
+import type { ClientSession, HydratedDocument } from 'mongoose';
 import { db, type IOrder } from './models';
 import { withTransaction } from './db';
 import { revalidateCatalog } from './data';
@@ -17,6 +17,61 @@ interface StoredItem {
 }
 
 const storedItems = (items: unknown): StoredItem[] => (Array.isArray(items) ? (items as StoredItem[]) : []);
+
+const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** "Flat 12, B-Block!" and "flat 12 b block" are the same address. */
+export const normalizeAddress = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+/**
+ * Units of each product this person has already ordered (any order that was not cancelled or failed).
+ * A person is matched by email, phone, customer account or the same delivery address + pincode,
+ * so changing just one of them still counts towards the same person.
+ */
+export async function previouslyOrderedQuantities(
+  who: { email: string; phone: string; customerId?: string | null; shippingAddress?: string; pincode?: string },
+  productIds: string[],
+  session?: ClientSession
+): Promise<Map<string, number>> {
+  const result = new Map<string, number>();
+  if (productIds.length === 0) return result;
+
+  const m = await db();
+  const person: Record<string, unknown>[] = [{ email: new RegExp(`^${escapeRegex(who.email)}$`, 'i') }, { phone: who.phone }];
+  if (who.customerId) person.push({ customerId: who.customerId });
+
+  // Same house, different phone/email: only comparable on orders to the same pincode.
+  if (who.pincode) person.push({ pincode: who.pincode });
+
+  const query = m.Order.find({
+    orderStatus: { $ne: 'Cancelled' },
+    paymentStatus: { $ne: 'Failed' },
+    'items.productId': { $in: productIds },
+    $or: person,
+  })
+    .select('items email phone customerId pincode shippingAddress')
+    .lean();
+  if (session) query.session(session);
+
+  const email = who.email.toLowerCase();
+  const address = who.shippingAddress ? normalizeAddress(who.shippingAddress) : '';
+  const samePerson = (o: { email?: string; phone?: string; customerId?: string | null; pincode?: string; shippingAddress?: string }) =>
+    String(o.email ?? '').toLowerCase() === email ||
+    o.phone === who.phone ||
+    (!!who.customerId && o.customerId === who.customerId) ||
+    (!!address && address.length >= 8 && o.pincode === who.pincode && normalizeAddress(String(o.shippingAddress ?? '')) === address);
+
+  const wanted = new Set(productIds);
+  for (const order of await query) {
+    if (!samePerson(order)) continue;
+    for (const item of storedItems(order.items)) {
+      const id = String(item.productId);
+      if (!wanted.has(id)) continue;
+      result.set(id, (result.get(id) ?? 0) + (Number(item.quantity) || 0));
+    }
+  }
+  return result;
+}
 
 export function newAccessToken(): string {
   return crypto.randomBytes(18).toString('base64url');
