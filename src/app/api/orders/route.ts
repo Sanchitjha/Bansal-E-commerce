@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
     const ensureWithinPersonLimit = async (session?: ClientSession) => {
       if (limitedQty.size === 0) return;
       const already = await previouslyOrderedQuantities(
-        { email, phone, customerId: customer?.sub ?? null },
+        { email, phone, customerId: customer?.sub ?? null, shippingAddress, pincode },
         [...limitedQty.keys()],
         session
       );

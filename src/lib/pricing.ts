@@ -26,16 +26,36 @@ export function getUnitPriceForProduct(
   return applicable ? applicable.pricePerUnit : basePrice;
 }
 
-/** Returns the maximum units of a product allowed in a single order (e.g. 1 for ₹1 promotional offers). */
+/** Diwali offer products: always one unit per customer, whatever the admin settings say. */
+export const ONE_PER_CUSTOMER_PRODUCT_IDS = ['prod-attar-2ml'];
+export const ONE_PER_CUSTOMER_PRODUCT_SLUGS = ['diwali-special-attar-2ml'];
+
+/** Products at or below this price (₹1-style promotional offers) are limited to one unit per customer. */
+const OFFER_PRICE_LIMIT = 10;
+
+/** Returns the maximum units of a product one customer may buy (across all of their orders). */
 export function getMaxOrderLimit(product: {
+  _id?: unknown;
+  id?: unknown;
+  urlSlug?: string | null;
   maxOrderQuantity?: number | null;
   sellingPrice: number;
+  variants?: unknown;
 }): number {
+  const id = String(product._id ?? product.id ?? '');
+  if (ONE_PER_CUSTOMER_PRODUCT_IDS.includes(id) || (product.urlSlug && ONE_PER_CUSTOMER_PRODUCT_SLUGS.includes(product.urlSlug))) {
+    return 1;
+  }
+  // A ₹1 variant is just as much an offer as a ₹1 product.
+  const variantPrices = Array.isArray(product.variants)
+    ? (product.variants as Array<{ price?: unknown }>).map((v) => Number(v?.price)).filter((p) => p > 0)
+    : [];
+  const lowestPrice = Math.min(product.sellingPrice, ...variantPrices);
+  if (lowestPrice <= OFFER_PRICE_LIMIT) {
+    return 1;
+  }
   if (typeof product.maxOrderQuantity === 'number' && product.maxOrderQuantity > 0) {
     return product.maxOrderQuantity;
-  }
-  if (product.sellingPrice <= 10) {
-    return 1;
   }
   return Infinity;
 }

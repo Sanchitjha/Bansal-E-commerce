@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Heart, Star, Sparkles, PlayCircle } from 'lucide-react';
 import { optimizeImage } from '@/lib/media';
+import { getMaxOrderLimit } from '@/lib/pricing';
 import { Product } from '@/types';
 import { useLuminary } from '@/context/LuminaryContext';
 
@@ -26,7 +27,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView, 
   const outOfStock = product.stock <= 0;
   const bulkSlab = product.isBulkAvailable && product.bulkSlabs && product.bulkSlabs.length > 1 ? product.bulkSlabs[1] : null;
   const hasVariants = Boolean(product.variants && product.variants.length > 0);
-  const isOneUnitLimit = (product.maxOrderQuantity && product.maxOrderQuantity === 1) || product.sellingPrice <= 10;
+  const isOneUnitLimit = getMaxOrderLimit(product) === 1;
 
   // Calculate price range if variants exist
   const variantPrices = hasVariants
