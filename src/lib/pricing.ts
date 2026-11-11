@@ -30,30 +30,46 @@ export function getUnitPriceForProduct(
 export const ONE_PER_CUSTOMER_PRODUCT_IDS = ['prod-attar-2ml'];
 export const ONE_PER_CUSTOMER_PRODUCT_SLUGS = ['diwali-special-attar-2ml'];
 
-/** Products at or below this price (₹1-style promotional offers) are limited to one unit per customer. */
-const OFFER_PRICE_LIMIT = 10;
+/** Anything sold at or below this price (₹1-style promotional offers) is an offer item. */
+export const OFFER_PRICE_LIMIT = 10;
 
-/** Returns the maximum units of a product one customer may buy (across all of their orders). */
-export function getMaxOrderLimit(product: {
+/** Max offer (₹1-style) units one customer may get in total, across all offer products and all orders. */
+export const OFFER_UNITS_PER_CUSTOMER = 1;
+
+type LimitProduct = {
   _id?: unknown;
   id?: unknown;
   urlSlug?: string | null;
   maxOrderQuantity?: number | null;
   sellingPrice: number;
   variants?: unknown;
-}): number {
+  bulkSlabs?: unknown;
+};
+
+/** The lowest price this product can be bought at: its own price, any variant price or any bulk slab price. */
+function lowestPossiblePrice(product: LimitProduct): number {
+  const prices = [Number(product.sellingPrice)];
+  if (Array.isArray(product.variants)) {
+    for (const v of product.variants as Array<{ price?: unknown }>) prices.push(Number(v?.price));
+  }
+  if (Array.isArray(product.bulkSlabs)) {
+    for (const slab of product.bulkSlabs as Array<{ pricePerUnit?: unknown }>) prices.push(Number(slab?.pricePerUnit));
+  }
+  const valid = prices.filter((p) => Number.isFinite(p) && p > 0);
+  return valid.length ? Math.min(...valid) : Infinity;
+}
+
+/** True for the Diwali offer products and anything that can be bought for ₹10 or less. */
+export function isOfferProduct(product: LimitProduct): boolean {
   const id = String(product._id ?? product.id ?? '');
-  if (ONE_PER_CUSTOMER_PRODUCT_IDS.includes(id) || (product.urlSlug && ONE_PER_CUSTOMER_PRODUCT_SLUGS.includes(product.urlSlug))) {
-    return 1;
-  }
-  // A ₹1 variant is just as much an offer as a ₹1 product.
-  const variantPrices = Array.isArray(product.variants)
-    ? (product.variants as Array<{ price?: unknown }>).map((v) => Number(v?.price)).filter((p) => p > 0)
-    : [];
-  const lowestPrice = Math.min(product.sellingPrice, ...variantPrices);
-  if (lowestPrice <= OFFER_PRICE_LIMIT) {
-    return 1;
-  }
+  if (ONE_PER_CUSTOMER_PRODUCT_IDS.includes(id)) return true;
+  if (product.urlSlug && ONE_PER_CUSTOMER_PRODUCT_SLUGS.includes(product.urlSlug)) return true;
+  return lowestPossiblePrice(product) <= OFFER_PRICE_LIMIT;
+}
+
+/** Returns the maximum units of a product one customer may buy (across all of their orders). */
+export function getMaxOrderLimit(product: LimitProduct): number {
+  if (isOfferProduct(product)) return OFFER_UNITS_PER_CUSTOMER;
   if (typeof product.maxOrderQuantity === 'number' && product.maxOrderQuantity > 0) {
     return product.maxOrderQuantity;
   }

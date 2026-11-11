@@ -4,7 +4,7 @@ import { attachCartCookie, getExistingCartSessionId, getOrCreateCartSession } fr
 import { addCartItem, clearCartItems, getCartItemQuantity, removeCartItem, setCartItemQuantity } from '@/lib/cart-ops';
 import { badRequest, notFound, serverError } from '@/lib/api-helpers';
 import { buildCartPayload } from '@/lib/cart-response';
-import { getMaxOrderLimit } from '@/lib/pricing';
+import { OFFER_PRICE_LIMIT, getMaxOrderLimit, isOfferProduct } from '@/lib/pricing';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,6 +40,18 @@ export async function POST(request: NextRequest) {
           ? `Maximum 1 unit per customer allowed for ${product.name}.`
           : `Maximum ${maxLimit} units allowed for ${product.name}.`
       );
+    }
+    // Only one ₹1-style offer item per customer, so a second, different offer product can't join the cart.
+    if (isOfferProduct(product)) {
+      const current = await buildCartPayload(sessionId);
+      const otherOffer = current.items.find(
+        (i) => i.product._id !== productId && (isOfferProduct(i.product) || i.unitPrice <= OFFER_PRICE_LIMIT)
+      );
+      if (otherOffer) {
+        return badRequest(
+          `Only one ₹1 offer item is allowed per customer. ${otherOffer.product.name} is already in your cart.`
+        );
+      }
     }
     if (product.stock <= 0) return badRequest(`${product.name} is out of stock.`);
     if (wantedQty > product.stock) {
