@@ -4,6 +4,7 @@ import { db, type IOrder } from './models';
 import { withTransaction } from './db';
 import { revalidateCatalog } from './data';
 import { addCartItem, setCartCoupon, setCartItemQuantity } from './cart-ops';
+import { ONE_PER_CUSTOMER_PRODUCT_IDS, OFFER_PRICE_LIMIT } from './pricing';
 
 export class OrderError extends Error {
   constructor(message: string, public status = 400) {
@@ -23,31 +24,45 @@ const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 /** "Flat 12, B-Block!" and "flat 12 b block" are the same address. */
 export const normalizeAddress = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
 
+export interface PreviousPurchases {
+  /** Units of each requested product this person already ordered. */
+  byProduct: Map<string, number>;
+  /** ₹1-style offer units this person already got, across all offer products. */
+  offerUnits: number;
+}
+
 /**
- * Units of each product this person has already ordered (any order that was not cancelled or failed).
+ * What this person has already ordered (any order that was not cancelled or failed).
  * A person is matched by email, phone, customer account or the same delivery address + pincode,
  * so changing just one of them still counts towards the same person.
  */
-export async function previouslyOrderedQuantities(
+export async function previousPurchases(
   who: { email: string; phone: string; customerId?: string | null; shippingAddress?: string; pincode?: string },
   productIds: string[],
+  offerProductIds: string[],
   session?: ClientSession
-): Promise<Map<string, number>> {
-  const result = new Map<string, number>();
-  if (productIds.length === 0) return result;
+): Promise<PreviousPurchases> {
+  const result: PreviousPurchases = { byProduct: new Map(), offerUnits: 0 };
 
   const m = await db();
   const person: Record<string, unknown>[] = [{ email: new RegExp(`^${escapeRegex(who.email)}$`, 'i') }, { phone: who.phone }];
   if (who.customerId) person.push({ customerId: who.customerId });
-
   // Same house, different phone/email: only comparable on orders to the same pincode.
   if (who.pincode) person.push({ pincode: who.pincode });
 
+  const offerIds = new Set([...ONE_PER_CUSTOMER_PRODUCT_IDS, ...offerProductIds]);
   const query = m.Order.find({
     orderStatus: { $ne: 'Cancelled' },
     paymentStatus: { $ne: 'Failed' },
-    'items.productId': { $in: productIds },
-    $or: person,
+    $and: [
+      { $or: person },
+      {
+        $or: [
+          { 'items.productId': { $in: [...new Set([...productIds, ...offerIds])] } },
+          { 'items.unitPrice': { $lte: OFFER_PRICE_LIMIT } },
+        ],
+      },
+    ],
   })
     .select('items email phone customerId pincode shippingAddress')
     .lean();
@@ -64,10 +79,12 @@ export async function previouslyOrderedQuantities(
   const wanted = new Set(productIds);
   for (const order of await query) {
     if (!samePerson(order)) continue;
-    for (const item of storedItems(order.items)) {
-      const id = String(item.productId);
-      if (!wanted.has(id)) continue;
-      result.set(id, (result.get(id) ?? 0) + (Number(item.quantity) || 0));
+    for (const raw of order.items as Array<{ productId?: unknown; quantity?: unknown; unitPrice?: unknown }>) {
+      const id = String(raw?.productId ?? '');
+      const qty = Number(raw?.quantity) || 0;
+      const unitPrice = Number(raw?.unitPrice);
+      if (wanted.has(id)) result.byProduct.set(id, (result.byProduct.get(id) ?? 0) + qty);
+      if (offerIds.has(id) || (Number.isFinite(unitPrice) && unitPrice <= OFFER_PRICE_LIMIT)) result.offerUnits += qty;
     }
   }
   return result;

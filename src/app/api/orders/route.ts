@@ -9,11 +9,11 @@ import { buildCartPayload } from '@/lib/cart-response';
 import { getCustomerFromRequest } from '@/lib/customer-auth';
 import { canonicalState, isValidEmail, normalizeIndianMobile } from '@/lib/india';
 import { sendOrderPlacedEmails } from '@/lib/order-notify';
-import { OrderError, cancelPendingOrder, previouslyOrderedQuantities, newAccessToken, newOrderId, releaseExpiredPendingOrders, restoreCartFromOrder } from '@/lib/orders';
+import { OrderError, cancelPendingOrder, previousPurchases, newAccessToken, newOrderId, releaseExpiredPendingOrders, restoreCartFromOrder } from '@/lib/orders';
 import { createRazorpayOrder, razorpayConfigured, razorpayKeyId } from '@/lib/payments';
 import { isPincodeBlocked } from '@/lib/pincode';
 import { PAYMENT_METHODS, isOneOf } from '@/lib/validators';
-import { getMaxOrderLimit } from '@/lib/pricing';
+import { OFFER_PRICE_LIMIT, OFFER_UNITS_PER_CUSTOMER, getMaxOrderLimit, isOfferProduct } from '@/lib/pricing';
 
 export const dynamic = 'force-dynamic';
 
@@ -102,18 +102,39 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // ₹1-style offers: one offer item per customer in total, whichever offer product it is.
+    const offerItems = cart.items.filter((item) => isOfferProduct(item.product) || item.unitPrice <= OFFER_PRICE_LIMIT);
+    const offerUnits = offerItems.reduce((sum, item) => sum + item.quantity, 0);
+    const offerProductIds = [...new Set(offerItems.map((item) => String(item.product._id)))];
+    if (offerUnits > OFFER_UNITS_PER_CUSTOMER) {
+      return badRequest(
+        `Only ${OFFER_UNITS_PER_CUSTOMER} ₹1 offer item is allowed per customer. Please keep just one of ${offerItems
+          .map((item) => item.product.name)
+          .join(', ')} in your cart.`
+      );
+    }
+
     const customer = getCustomerFromRequest(request);
 
     // The limit is per person, not per order: units already ordered earlier count too.
     const ensureWithinPersonLimit = async (session?: ClientSession) => {
-      if (limitedQty.size === 0) return;
-      const already = await previouslyOrderedQuantities(
+      if (limitedQty.size === 0 && offerUnits === 0) return;
+      const already = await previousPurchases(
         { email, phone, customerId: customer?.sub ?? null, shippingAddress, pincode },
         [...limitedQty.keys()],
+        offerProductIds,
         session
       );
+      if (offerUnits > 0 && already.offerUnits + offerUnits > OFFER_UNITS_PER_CUSTOMER) {
+        throw new OrderError(
+          `You have already received a ₹1 offer item. The offer is limited to ${OFFER_UNITS_PER_CUSTOMER} item per customer. Please remove ${offerItems
+            .map((item) => item.product.name)
+            .join(', ')} from your cart.`,
+          409
+        );
+      }
       for (const [productId, { name, limit, quantity }] of limitedQty) {
-        const before = already.get(productId) ?? 0;
+        const before = already.byProduct.get(productId) ?? 0;
         if (before + quantity > limit) {
           throw new OrderError(
             limit === 1 || before >= limit
