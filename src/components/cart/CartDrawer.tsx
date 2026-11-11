@@ -198,6 +198,11 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                         <span className="font-mono text-xs font-bold text-brand-green-700">
                           ₹{item.totalPrice.toLocaleString()}
                         </span>
+                        {item.offerPriceRemoved && (
+                          <span className="block text-[9px] text-amber-700 font-semibold max-w-[9rem]">
+                            ₹1 offer already used · original price
+                          </span>
+                        )}
                         {item.quantity > 1 && item.unitPrice < item.product.sellingPrice && (
                           <span className="block text-[9px] text-emerald-600 font-semibold">
                             Bulk Tier Applied

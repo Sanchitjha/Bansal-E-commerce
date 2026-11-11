@@ -82,6 +82,8 @@ export interface CartItem {
   variantName?: string;
   variantSku?: string;
   variantMrp?: number;
+  /** True when this item is a ₹1 offer item but the offer was already used by an item added earlier. */
+  offerPriceRemoved?: boolean;
 }
 
 export interface Coupon {

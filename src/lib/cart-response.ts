@@ -1,5 +1,5 @@
 import { db } from './models';
-import { computeCartTotals, getMaxOrderLimit, getUnitPriceForProduct, type PricingLine } from './pricing';
+import { OFFER_PRICE_LIMIT, OFFER_UNITS_PER_CUSTOMER, computeCartTotals, getMaxOrderLimit, getUnitPriceForProduct, type PricingLine } from './pricing';
 
 /** Shared shape builder used by the cart, coupon and order routes so they always agree on prices. */
 export async function buildCartPayload(sessionId: string, customerState?: string) {
@@ -13,6 +13,8 @@ export async function buildCartPayload(sessionId: string, customerState?: string
   const productById = new Map(products.map((p) => [p._id, p]));
 
   let needsDbSync = false;
+  // Only the first ₹1-style offer item added to the cart keeps its offer price; later ones cost their original price.
+  let offerUnitsLeft = OFFER_UNITS_PER_CUSTOMER;
 
   // A product deleted after being added to a cart simply drops out of it.
   const items = lineItems
@@ -39,11 +41,25 @@ export async function buildCartPayload(sessionId: string, customerState?: string
         needsDbSync = true;
       }
 
-      const unitPrice = getUnitPriceForProduct(product, effectiveQty, i.selectedVariantId);
+      let unitPrice = getUnitPriceForProduct(product, effectiveQty, i.selectedVariantId);
+      let offerPriceRemoved = false;
+      if (unitPrice <= OFFER_PRICE_LIMIT) {
+        if (offerUnitsLeft >= effectiveQty) {
+          offerUnitsLeft -= effectiveQty;
+        } else {
+          // The ₹1 offer is already used by an item added earlier: charge the original (MRP) price.
+          const original = [lineMrp, product.mrp, product.sellingPrice].find((p) => typeof p === 'number' && p > OFFER_PRICE_LIMIT);
+          if (original) {
+            unitPrice = original;
+            offerPriceRemoved = true;
+          }
+        }
+      }
       return {
         product,
         quantity: effectiveQty,
         unitPrice,
+        offerPriceRemoved,
         totalPrice: unitPrice * effectiveQty,
         selectedVariantId: i.selectedVariantId || undefined,
         variantName,
