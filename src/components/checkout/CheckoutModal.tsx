@@ -401,6 +401,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, o
                       <div className="min-w-0 pr-2">
                         <p className="font-medium text-slate-900 truncate">{item.product.name}</p>
                         <p className="text-[11px] text-slate-500">Qty {item.quantity} × ₹{item.unitPrice.toLocaleString('en-IN')}</p>
+                        {item.offerPriceRemoved && (
+                          <p className="text-[11px] text-amber-700 font-medium">₹1 offer is for one item only · original price</p>
+                        )}
                       </div>
                       <span className="font-semibold text-slate-900 shrink-0">₹{item.totalPrice.toLocaleString('en-IN')}</span>
                     </div>

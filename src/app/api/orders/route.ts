@@ -87,7 +87,8 @@ export async function POST(request: NextRequest) {
     const limitedQty = new Map<string, { name: string; limit: number; quantity: number }>();
     for (const item of cart.items) {
       const limit = getMaxOrderLimit(item.product);
-      if (!Number.isFinite(limit)) continue;
+      // Offer products are handled below by price: only the ₹1 offer itself is once per customer.
+      if (!Number.isFinite(limit) || isOfferProduct(item.product)) continue;
       const entry = limitedQty.get(item.product._id) ?? { name: item.product.name, limit, quantity: 0 };
       entry.quantity += item.quantity;
       limitedQty.set(item.product._id, entry);
@@ -103,9 +104,9 @@ export async function POST(request: NextRequest) {
     }
 
     // ₹1-style offers: one offer item per customer in total, whichever offer product it is.
-    const offerItems = cart.items.filter((item) => isOfferProduct(item.product) || item.unitPrice <= OFFER_PRICE_LIMIT);
+    // (The cart already charges the original price for every offer item after the first one.)
+    const offerItems = cart.items.filter((item) => item.unitPrice <= OFFER_PRICE_LIMIT);
     const offerUnits = offerItems.reduce((sum, item) => sum + item.quantity, 0);
-    const offerProductIds = [...new Set(offerItems.map((item) => String(item.product._id)))];
     if (offerUnits > OFFER_UNITS_PER_CUSTOMER) {
       return badRequest(
         `Only ${OFFER_UNITS_PER_CUSTOMER} ₹1 offer item is allowed per customer. Please keep just one of ${offerItems
@@ -122,7 +123,6 @@ export async function POST(request: NextRequest) {
       const already = await previousPurchases(
         { email, phone, customerId: customer?.sub ?? null, shippingAddress, pincode },
         [...limitedQty.keys()],
-        offerProductIds,
         session
       );
       if (offerUnits > 0 && already.offerUnits + offerUnits > OFFER_UNITS_PER_CUSTOMER) {

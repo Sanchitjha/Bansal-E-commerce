@@ -4,7 +4,7 @@ import { db, type IOrder } from './models';
 import { withTransaction } from './db';
 import { revalidateCatalog } from './data';
 import { addCartItem, setCartCoupon, setCartItemQuantity } from './cart-ops';
-import { ONE_PER_CUSTOMER_PRODUCT_IDS, OFFER_PRICE_LIMIT } from './pricing';
+import { OFFER_PRICE_LIMIT } from './pricing';
 
 export class OrderError extends Error {
   constructor(message: string, public status = 400) {
@@ -39,7 +39,6 @@ export interface PreviousPurchases {
 export async function previousPurchases(
   who: { email: string; phone: string; customerId?: string | null; shippingAddress?: string; pincode?: string },
   productIds: string[],
-  offerProductIds: string[],
   session?: ClientSession
 ): Promise<PreviousPurchases> {
   const result: PreviousPurchases = { byProduct: new Map(), offerUnits: 0 };
@@ -50,7 +49,6 @@ export async function previousPurchases(
   // Same house, different phone/email: only comparable on orders to the same pincode.
   if (who.pincode) person.push({ pincode: who.pincode });
 
-  const offerIds = new Set([...ONE_PER_CUSTOMER_PRODUCT_IDS, ...offerProductIds]);
   const query = m.Order.find({
     orderStatus: { $ne: 'Cancelled' },
     paymentStatus: { $ne: 'Failed' },
@@ -58,7 +56,7 @@ export async function previousPurchases(
       { $or: person },
       {
         $or: [
-          { 'items.productId': { $in: [...new Set([...productIds, ...offerIds])] } },
+          { 'items.productId': { $in: productIds } },
           { 'items.unitPrice': { $lte: OFFER_PRICE_LIMIT } },
         ],
       },
@@ -84,7 +82,8 @@ export async function previousPurchases(
       const qty = Number(raw?.quantity) || 0;
       const unitPrice = Number(raw?.unitPrice);
       if (wanted.has(id)) result.byProduct.set(id, (result.byProduct.get(id) ?? 0) + qty);
-      if (offerIds.has(id) || (Number.isFinite(unitPrice) && unitPrice <= OFFER_PRICE_LIMIT)) result.offerUnits += qty;
+      // Only items actually sold at the offer price used up the offer.
+      if (Number.isFinite(unitPrice) && unitPrice <= OFFER_PRICE_LIMIT) result.offerUnits += qty;
     }
   }
   return result;
